@@ -3,10 +3,8 @@
 Self-test for tools/media (needs Pillow: run via `tools/media/setup.sh --check`).
 
 Ported from narthex scripts/smoke-chromakey-guide.mts (functional part), plus
-checks for the two fixes in this copy (--mode flood, --no-despill) and for
-media_check.py. Exit code 0 = all green.
+checks for the two fixes in this copy (--mode flood, --no-despill). Exit code 0 = all green.
 """
-import json
 import os
 import shutil
 import subprocess
@@ -17,7 +15,6 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CUT = os.path.join(HERE, "cutout-chromakey.py")
-CHECK = os.path.join(HERE, "media_check.py")
 TMP = tempfile.mkdtemp(prefix="synapse_media_test_")
 failures = 0
 
@@ -114,23 +111,6 @@ check("heal: body kept", h[1][3] == 255, f"{h[1]}")
 check("heal: legal green window untouched", h[2][3] == 0, f"{h[2]}")
 check("heal: outside untouched", h[3][3] == 0, f"{h[3]}")
 check("heal: prints statistics", "восстановлено пикселей" in r.stdout, r.stdout.strip()[:120])
-
-# media_check: clean cutout passes, raw green source and a fake PNG fail
-os.makedirs(t("assets"))
-shutil.copy(t("auto.png"), t("assets/ok.png"))
-r = run(CHECK, t("assets"))
-check("media_check: clean cutout passes", r.returncode == 0, r.stdout[-300:])
-shutil.copy(t("src.png"), t("assets/raw_green.png"))
-with open(t("assets/fake.png"), "w") as f:
-    f.write("<html>quota exceeded</html>")
-r = run(CHECK, t("assets"), "--json")
-rep = json.loads(r.stdout) if r.stdout.strip().startswith("{") else {}
-by = {os.path.basename(x["file"]): x for x in rep.get("files", [])}
-check("media_check: exit 1 on failures", r.returncode == 1)
-check("media_check: chroma residue detected",
-      any("chroma residue" in m for _, m in by.get("raw_green.png", {}).get("issues", [])))
-check("media_check: fake PNG detected",
-      any("does not match" in m for _, m in by.get("fake.png", {}).get("issues", [])))
 
 shutil.rmtree(TMP, ignore_errors=True)
 print("\nmedia tools: all green" if failures == 0 else f"\n{failures} checks failed")

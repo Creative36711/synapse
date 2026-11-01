@@ -90,7 +90,7 @@ export PATH="/tmp/synapse-media/bin:$PATH"
   `--heal damaged.png fixed.png` restores icons damaged by old cutouts.
 * The pipeline: generate on solid `#00FF00`, cut with `--mode auto --crop`, then **look at
   the result yourself** (read_file on images) — details in `tools/media/GENERATION_GUIDE.md`.
-* Toolbox extras kept for convenience: `media-check <dir>` (acceptance gate), `ffmpeg`.
+* `ffmpeg` (static 7.0) is also in the toolbox for audio/media conversion.
 
 ## 5. 3D models and renders: Blender headless (tools/modeling)
 
