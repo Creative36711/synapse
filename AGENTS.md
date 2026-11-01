@@ -75,7 +75,55 @@ Notes:
    Full command list: header of `agent_bridge.gd` (key, tap, action, click, move, wait, frames, shot,
    tree, call, quit). Input is injected as real `InputEvent`s.
 
-## 4. Engine details / rebuilding
+## 4. Media toolbox: images, chromakey, audio (tools/media)
+
+Media generation and acceptance for game assets (image/audio). Russian agent guide:
+`tools/media/GENERATION_GUIDE.md` (ported from narthex: quotas, prompt templates, chromakey rules).
+
+```bash
+tools/media/setup.sh --check                # venv /tmp/synapse-media: Pillow + ffmpeg + self-test
+export PATH="/tmp/synapse-media/bin:$PATH"
+```
+
+* `cutout-chromakey in.png out.png [--mode auto|color|flood|points] [--crop] [--tol 70] [--allow-cyan] [--no-despill]`
+  — removes a `#00FF00` background with a STRICT key (teal/cyan is NOT background — a lesson
+  from narthex). `--heal damaged.png fixed.png` restores icons damaged by old cutouts.
+* `media-check <dir-or-files...>` — acceptance gate: signature vs extension (catches HTML
+  named .png), chroma residue (>0.5% opaque green = fail), weight (>4 MB image / >8 MB audio),
+  duplicates by sha256. Run it on assets before committing.
+* `ffmpeg` — static 7.0 (mp3/ogg/opus/wav, `loudnorm`, `silenceremove`).
+
+The media-generation workflow itself (10 images + 10 voice clips per turn, chromakey pipeline,
+prompt templates, voice registration, ledger) is in `tools/media/GENERATION_GUIDE.md` — read it
+before generating the first asset. Look at results with your own eyes (read_file on images);
+`media-check` does not judge beauty.
+
+## 5. 3D models and renders: Blender headless (tools/modeling)
+
+For 3D assets: Blender as a Python module (`bpy`), no display needed. Russian/English docs below.
+
+```bash
+tools/modeling/setup_bpy.sh --check         # venv /tmp/synapse-bpy: bpy 4.5.3 + stubs + smoke test
+export SYNAPSE_BPY_PY=/tmp/synapse-bpy/bin/bpy-python
+$SYNAPSE_BPY_PY my_script.py               # runs a Blender script headless
+```
+
+* `bpy` = Blender 4.5.3 LTS embedded (~370 MB from pypi.org). Needs python 3.11 (system python here).
+* The wheel links X11/GL symbols; on a bare sandbox `setup_bpy.sh` builds empty stub libraries
+  (gcc) so `import bpy` works. On a machine with real X/GL libs, no stubs are built.
+* Wrapper `bpy-python` sets `LD_LIBRARY_PATH` only when stubs exist.
+
+What works headless (verified by `--check`): mesh ops, materials, **GLB + .gltf export**
+(baked transforms, Y-up conversion), and **Cycles CPU render** to PNG (works fully offscreen).
+What does NOT work: EEVEE renderer (needs a real GL context), GPU rendering (CUDA/OptiX),
+interactive UI.
+
+Typical use: write a model script (cube → materials → `bpy.ops.export_scene.gltf`), run it with
+`bpy-python`, put the GLB into the Godot project's `res://assets/`, then
+`godot --headless --path <project> --import`. Cycles CPU renders give a verification image
+(light a cube or your model, render, look at the PNG).
+
+## 6. Engine details / rebuilding
 
 * Version: Godot `4.7.2-stable` (official source) + patches in `tools/godot/patches/`:
   * `0001-offscreen-display-server.patch` — new `offscreen` display driver (Vulkan swapchain on
@@ -92,7 +140,7 @@ Notes:
   Do not use Git LFS or GitHub Releases for binaries: many agent sandboxes can reach `github.com`
   but not the LFS/release download hosts.
 
-## 5. Troubleshooting
+## 7. Troubleshooting
 
 | Symptom | Fix |
 |---|---|

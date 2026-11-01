@@ -23,3 +23,29 @@ godot --version
 | `tools/godot/smoke_test/` | Проверочная 3D-сцена (импорт, рендер, ввод, скриншоты) |
 | `tools/godot/patches/` | Патчи к официальному Godot 4.7.2 (offscreen-драйвер, фикс кернинга, совместимость с glibc 2.35) |
 | `tools/godot/build_from_source.sh`, `package.sh` | Пересборка движка из исходников и упаковка в `dist/` |
+| `tools/media/` | Медиа-инструменты: вырезание хромакея, приёмка ассетов, ffmpeg. Гайд по генерации картинок и озвучки — [`tools/media/GENERATION_GUIDE.md`](tools/media/GENERATION_GUIDE.md) |
+| `tools/modeling/` | Blender 4.5 без экрана (`bpy`): 3D-модели, GLB/gltf-экспорт, Cycles CPU-рендер |
+
+## Медиа: картинки и озвучка
+
+```bash
+tools/media/setup.sh --check              # venv /tmp/synapse-media: Pillow + ffmpeg + тесты
+export PATH="/tmp/synapse-media/bin:$PATH"
+cutout-chromakey in.png out.png --mode auto --crop   # хромакей #00FF00 (бирюзу не ест)
+media-check assets/                        # приёмка: сигнатура, остаток хромакея, вес, дубликаты
+```
+
+Гайд по квоте (10 картинок + 10 клипов озвучки за ход), промпту-шаблонам и пайплайну хромакея —
+[`tools/media/GENERATION_GUIDE.md`](tools/media/GENERATION_GUIDE.md) (перенесён из narthex, где
+это отработало на реальной кампании).
+
+## 3D-модели: Blender без экрана
+
+```bash
+tools/modeling/setup_bpy.sh --check       # venv /tmp/synapse-bpy: Blender 4.5.3 + стопы для песочниц
+export SYNAPSE_BPY_PY=/tmp/synapse-bpy/bin/bpy-python
+$SYNAPSE_BPY_PY my_model.py               # сценарий Blender: геометрия, материалы, GLB-экспорт, рендер
+```
+
+Верифицируйте: куб с материалом → GLB (проверен по accessor min/max и нодовой матрице), Cycles
+CPU-рендер в PNG. Подробности — в [AGENTS.md](AGENTS.md), §5.
