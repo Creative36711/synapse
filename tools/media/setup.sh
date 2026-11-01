@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Synapse media toolbox: Pillow (for cutout-chromakey.py / media_check.py) and a
+# Synapse media toolbox: Pillow (for cutout-chromakey.py) and a
 # static ffmpeg (from the imageio-ffmpeg wheel) in a throwaway venv.
 #
 #   tools/media/setup.sh            # install into $SYNAPSE_MEDIA_HOME (default /tmp/synapse-media)
