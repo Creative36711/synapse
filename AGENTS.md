@@ -75,28 +75,22 @@ Notes:
    Full command list: header of `agent_bridge.gd` (key, tap, action, click, move, wait, frames, shot,
    tree, call, quit). Input is injected as real `InputEvent`s.
 
-## 4. Media toolbox: images, chromakey, audio (tools/media)
+## 4. Media toolbox: chromakey (tools/media)
 
-Media generation and acceptance for game assets (image/audio). Russian agent guide:
-`tools/media/GENERATION_GUIDE.md` (ported from narthex: quotas, prompt templates, chromakey rules).
+Cutting transparent backgrounds from generated images — the one workflow ported from
+narthex that earned its place. Russian guide: `tools/media/GENERATION_GUIDE.md`.
 
 ```bash
-tools/media/setup.sh --check                # venv /tmp/synapse-media: Pillow + ffmpeg + self-test
+tools/media/setup.sh --check                # venv /tmp/synapse-media: Pillow + self-test
 export PATH="/tmp/synapse-media/bin:$PATH"
 ```
 
 * `cutout-chromakey in.png out.png [--mode auto|color|flood|points] [--crop] [--tol 70] [--allow-cyan] [--no-despill]`
-  — removes a `#00FF00` background with a STRICT key (teal/cyan is NOT background — a lesson
-  from narthex). `--heal damaged.png fixed.png` restores icons damaged by old cutouts.
-* `media-check <dir-or-files...>` — acceptance gate: signature vs extension (catches HTML
-  named .png), chroma residue (>0.5% opaque green = fail), weight (>4 MB image / >8 MB audio),
-  duplicates by sha256. Run it on assets before committing.
-* `ffmpeg` — static 7.0 (mp3/ogg/opus/wav, `loudnorm`, `silenceremove`).
-
-The media-generation workflow itself (10 images + 10 voice clips per turn, chromakey pipeline,
-prompt templates, voice registration, ledger) is in `tools/media/GENERATION_GUIDE.md` — read it
-before generating the first asset. Look at results with your own eyes (read_file on images);
-`media-check` does not judge beauty.
+  — removes a `#00FF00` background with a STRICT key (teal/cyan is NOT background).
+  `--heal damaged.png fixed.png` restores icons damaged by old cutouts.
+* The pipeline: generate on solid `#00FF00`, cut with `--mode auto --crop`, then **look at
+  the result yourself** (read_file on images) — details in `tools/media/GENERATION_GUIDE.md`.
+* Toolbox extras kept for convenience: `media-check <dir>` (acceptance gate), `ffmpeg`.
 
 ## 5. 3D models and renders: Blender headless (tools/modeling)
 
