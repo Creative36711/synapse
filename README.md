@@ -23,7 +23,7 @@ godot --version
 | `tools/godot/smoke_test/` | Проверочная 3D-сцена (импорт, рендер, ввод, скриншоты) |
 | `tools/godot/patches/` | Патчи к официальному Godot 4.7.2 (offscreen-драйвер, фикс кернинга, совместимость с glibc 2.35) |
 | `tools/godot/build_from_source.sh`, `package.sh` | Пересборка движка из исходников и упаковка в `dist/` |
-| `tools/media/` | Вырезание хромакея (+ ffmpeg). Гайд — [`tools/media/GENERATION_GUIDE.md`](tools/media/GENERATION_GUIDE.md) |
+| `tools/media/` | Вырезание хромакея. Гайд — [`tools/media/GENERATION_GUIDE.md`](tools/media/GENERATION_GUIDE.md) |
 | `tools/modeling/` | Blender 4.5 без экрана (`bpy`): 3D-модели, GLB/gltf-экспорт, Cycles CPU-рендер |
 
 ## Медиа: вырезание фона (хромакей)

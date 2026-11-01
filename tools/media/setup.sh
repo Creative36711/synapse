@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Synapse media toolbox: Pillow (for cutout-chromakey.py) and a
-# static ffmpeg (from the imageio-ffmpeg wheel) in a throwaway venv.
+# Synapse media toolbox: Pillow for cutout-chromakey.py in a throwaway venv.
 #
 #   tools/media/setup.sh            # install into $SYNAPSE_MEDIA_HOME (default /tmp/synapse-media)
 #   tools/media/setup.sh --check    # install + run the self-test
@@ -8,7 +7,6 @@
 #
 # After that the following commands are on PATH:
 #   cutout-chromakey  in.png out.png [--mode auto|color|flood|points] [--heal] ...
-#   ffmpeg            static ffmpeg 7 (mp3, ogg/vorbis, opus, wav, loudnorm, silenceremove)
 #
 # Only pypi.org / files.pythonhosted.org are needed (no apt, no root).
 set -euo pipefail
@@ -28,13 +26,10 @@ if [ ! -x "$PREFIX/bin/python" ]; then
   echo "[media] creating venv $PREFIX"
   python3 -m venv "$PREFIX"
 fi
-if ! "$PREFIX/bin/python" -c "import PIL, imageio_ffmpeg" 2>/dev/null; then
-  echo "[media] pip install pillow imageio-ffmpeg"
-  "$PREFIX/bin/pip" install -q --disable-pip-version-check --progress-bar off pillow imageio-ffmpeg
+if ! "$PREFIX/bin/python" -c "import PIL" 2>/dev/null; then
+  echo "[media] pip install pillow"
+  "$PREFIX/bin/pip" install -q --disable-pip-version-check --progress-bar off pillow
 fi
-
-FFMPEG="$("$PREFIX/bin/python" -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())')"
-ln -sf "$FFMPEG" "$PREFIX/bin/ffmpeg"
 
 # Wrappers always point at this checkout's scripts and the venv's python.
 for pair in "cutout-chromakey:cutout-chromakey.py"; do
@@ -46,7 +41,7 @@ EOF
   chmod +x "$PREFIX/bin/$name"
 done
 
-echo "[media] ready: $PREFIX/bin/{cutout-chromakey,ffmpeg}"
+echo "[media] ready: $PREFIX/bin/cutout-chromakey"
 echo "[media]   export PATH=\"$PREFIX/bin:\$PATH\""
 
 if [ "$CHECK" = 1 ]; then
