@@ -1,0 +1,47 @@
+diff --git a/platform/linuxbsd/SCsub b/platform/linuxbsd/SCsub
+--- a/platform/linuxbsd/SCsub
++++ b/platform/linuxbsd/SCsub
+@@ -22,6 +22,7 @@
+     common_linuxbsd.append("xkbcommon-so_wrap.c")
+ 
+ common_linuxbsd.append("offscreen/display_server_offscreen.cpp")
++common_linuxbsd.append("glibc_compat.c")
+ 
+ if env["x11"]:
+     common_linuxbsd += SConscript("x11/SCsub")
+diff --git a/platform/linuxbsd/glibc_compat.c b/platform/linuxbsd/glibc_compat.c
+new file mode 100644
+index 0000000..94f2ce1
+--- /dev/null
++++ b/platform/linuxbsd/glibc_compat.c
+@@ -0,0 +1,30 @@
++/**************************************************************************/
++/*  glibc_compat.c                                                        */
++/**************************************************************************/
++/* The statically linked libstdc++ (std::random_device) references        */
++/* arc4random(), which only exists in glibc >= 2.36. Providing it here     */
++/* (on top of getrandom(), glibc >= 2.25) keeps the binary runnable on     */
++/* glibc 2.35 systems such as Ubuntu 22.04.                                */
++/**************************************************************************/
++
++#include <errno.h>
++#include <stdint.h>
++#include <sys/random.h>
++
++#if defined(__linux__) && defined(__GLIBC__)
++
++uint32_t arc4random(void) {
++	uint32_t value = 0;
++	for (;;) {
++		ssize_t r = getrandom(&value, sizeof(value), 0);
++		if (r == (ssize_t)sizeof(value)) {
++			return value;
++		}
++		if (r < 0 && errno != EINTR) {
++			// Should never happen on Linux >= 3.17; fail safe instead of returning weak randomness.
++			__builtin_trap();
++		}
++	}
++}
++
++#endif

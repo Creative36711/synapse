@@ -1,0 +1,5 @@
+# sha256 of the UNCOMPRESSED godot binary, then of each archive file
+9769392ea210a6a517722f72f8109442d0c5739e95b3d72b72a1f88dbc8c4b9b  godot (uncompressed)
+40100eaefca9f4296524af5613d36afb543533ac13cc40896509fc2c0abc9153  godot-linux-x86_64.xz.part-00
+f026073535fe76a15e0ce048ad8516cb6b9e7144e456ac0c1ebcae3a44587579  godot-linux-x86_64.xz.part-01
+4d438564ffc6d48a1de3d23a2418ac14a798dffa07ae32bb47decb75584476bd  swiftshader-linux-x86_64.tar.xz

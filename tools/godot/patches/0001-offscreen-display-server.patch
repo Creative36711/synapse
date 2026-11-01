@@ -1,0 +1,280 @@
+diff --git a/platform/linuxbsd/SCsub b/platform/linuxbsd/SCsub
+index 87586c5..4dba449 100644
+--- a/platform/linuxbsd/SCsub
++++ b/platform/linuxbsd/SCsub
+@@ -21,6 +21,8 @@ else:
+ if env["use_sowrap"]:
+     common_linuxbsd.append("xkbcommon-so_wrap.c")
+ 
++common_linuxbsd.append("offscreen/display_server_offscreen.cpp")
++
+ if env["x11"]:
+     common_linuxbsd += SConscript("x11/SCsub")
+ 
+diff --git a/platform/linuxbsd/offscreen/display_server_offscreen.cpp b/platform/linuxbsd/offscreen/display_server_offscreen.cpp
+new file mode 100644
+index 0000000..46c7a8c
+--- /dev/null
++++ b/platform/linuxbsd/offscreen/display_server_offscreen.cpp
+@@ -0,0 +1,171 @@
++/**************************************************************************/
++/*  display_server_offscreen.cpp                                          */
++/**************************************************************************/
++
++#include "display_server_offscreen.h"
++
++#include "core/os/os.h"
++#include "servers/rendering/dummy/rasterizer_dummy.h"
++
++#if defined(RD_ENABLED)
++#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
++#include "servers/rendering/rendering_device.h"
++#endif
++
++#if defined(VULKAN_ENABLED)
++#include "drivers/vulkan/godot_vulkan.h"
++#include "drivers/vulkan/rendering_context_driver_vulkan.h"
++
++class RenderingContextDriverVulkanOffscreen : public RenderingContextDriverVulkan {
++	virtual const char *_get_platform_surface_extension() const override final {
++		return VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME;
++	}
++
++protected:
++	SurfaceID surface_create(const void *p_platform_data) override final {
++		VkHeadlessSurfaceCreateInfoEXT create_info = {};
++		create_info.sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT;
++		VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
++		VkResult err = vkCreateHeadlessSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
++		ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
++		Surface *surface = memnew(Surface);
++		surface->vk_surface = vk_surface;
++		return SurfaceID(surface);
++	}
++};
++#endif
++
++Vector<String> DisplayServerOffscreen::get_rendering_drivers_func() {
++	Vector<String> drivers;
++#ifdef VULKAN_ENABLED
++	drivers.push_back("vulkan");
++#endif
++	drivers.push_back("dummy");
++	return drivers;
++}
++
++DisplayServer *DisplayServerOffscreen::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
++	DisplayServer *ds = memnew(DisplayServerOffscreen(p_rendering_driver, p_vsync_mode, p_resolution, r_error));
++	if (r_error != OK) {
++		memdelete(ds);
++		return nullptr;
++	}
++	return ds;
++}
++
++Vector<DisplayServerEnums::WindowID> DisplayServerOffscreen::get_window_list() const {
++	Vector<DisplayServerEnums::WindowID> list;
++	list.push_back(DisplayServerEnums::MAIN_WINDOW_ID);
++	return list;
++}
++
++void DisplayServerOffscreen::window_set_size(const Size2i p_size, DisplayServerEnums::WindowID p_window) {
++	if (p_size.x <= 0 || p_size.y <= 0 || p_size == window_size) {
++		return;
++	}
++	window_size = p_size;
++#if defined(RD_ENABLED)
++	if (rendering_context) {
++		rendering_context->window_set_size(DisplayServerEnums::MAIN_WINDOW_ID, window_size.width, window_size.height);
++	}
++#endif
++	if (rect_changed_callback.is_valid()) {
++		rect_changed_callback.call(Rect2i(Point2i(), window_size));
++	}
++}
++
++void DisplayServerOffscreen::window_set_vsync_mode(DisplayServerEnums::VSyncMode p_vsync_mode, DisplayServerEnums::WindowID p_window) {
++	vsync_mode = p_vsync_mode;
++#if defined(RD_ENABLED)
++	if (rendering_context) {
++		rendering_context->window_set_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID, p_vsync_mode);
++	}
++#endif
++}
++
++DisplayServerEnums::VSyncMode DisplayServerOffscreen::window_get_vsync_mode(DisplayServerEnums::WindowID p_window) const {
++#if defined(RD_ENABLED)
++	if (rendering_context) {
++		return rendering_context->window_get_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID);
++	}
++#endif
++	return vsync_mode;
++}
++
++void DisplayServerOffscreen::register_offscreen_driver() {
++	register_create_function("offscreen", create_func, get_rendering_drivers_func);
++}
++
++DisplayServerOffscreen::DisplayServerOffscreen(const String &p_rendering_driver, DisplayServerEnums::VSyncMode p_vsync_mode, const Vector2i &p_resolution, Error &r_error) {
++	r_error = OK;
++	if (p_resolution.x > 0 && p_resolution.y > 0) {
++		window_size = p_resolution;
++	}
++	vsync_mode = p_vsync_mode;
++
++	if (p_rendering_driver == "dummy") {
++		RasterizerDummy::make_current();
++		return;
++	}
++
++#if defined(VULKAN_ENABLED)
++	if (p_rendering_driver == "vulkan") {
++		rendering_context = memnew(RenderingContextDriverVulkanOffscreen);
++	}
++#endif
++
++#if defined(RD_ENABLED)
++	if (!rendering_context) {
++		ERR_PRINT(vformat("Offscreen display server: unsupported rendering driver '%s'.", p_rendering_driver));
++		r_error = ERR_UNAVAILABLE;
++		return;
++	}
++	if (rendering_context->initialize() != OK) {
++		memdelete(rendering_context);
++		rendering_context = nullptr;
++		r_error = ERR_CANT_CREATE;
++		ERR_FAIL_MSG("Offscreen display server: could not initialize the Vulkan context (is a driver with VK_EXT_headless_surface available?).");
++	}
++
++	int dummy_platform_data = 0;
++	if (rendering_context->window_create(DisplayServerEnums::MAIN_WINDOW_ID, &dummy_platform_data) != OK) {
++		memdelete(rendering_context);
++		rendering_context = nullptr;
++		r_error = ERR_CANT_CREATE;
++		ERR_FAIL_MSG("Offscreen display server: could not create the headless surface.");
++	}
++	rendering_context->window_set_size(DisplayServerEnums::MAIN_WINDOW_ID, window_size.width, window_size.height);
++	rendering_context->window_set_vsync_mode(DisplayServerEnums::MAIN_WINDOW_ID, p_vsync_mode);
++
++	rendering_device = memnew(RenderingDevice);
++	if (rendering_device->initialize(rendering_context, DisplayServerEnums::MAIN_WINDOW_ID) != OK) {
++		memdelete(rendering_device);
++		rendering_device = nullptr;
++		rendering_context->window_destroy(DisplayServerEnums::MAIN_WINDOW_ID);
++		memdelete(rendering_context);
++		rendering_context = nullptr;
++		r_error = ERR_UNAVAILABLE;
++		ERR_FAIL_MSG("Offscreen display server: could not initialize the RenderingDevice.");
++	}
++	rendering_device->screen_create(DisplayServerEnums::MAIN_WINDOW_ID);
++	RendererCompositorRD::make_current();
++	print_line(vformat("Offscreen display server: %dx%d, rendering with %s.", window_size.width, window_size.height, p_rendering_driver));
++#else
++	r_error = ERR_UNAVAILABLE;
++#endif
++}
++
++DisplayServerOffscreen::~DisplayServerOffscreen() {
++#if defined(RD_ENABLED)
++	if (rendering_device) {
++		rendering_device->screen_free(DisplayServerEnums::MAIN_WINDOW_ID);
++		memdelete(rendering_device);
++		rendering_device = nullptr;
++	}
++	if (rendering_context) {
++		rendering_context->window_destroy(DisplayServerEnums::MAIN_WINDOW_ID);
++		memdelete(rendering_context);
++		rendering_context = nullptr;
++	}
++#endif
++}
+diff --git a/platform/linuxbsd/offscreen/display_server_offscreen.h b/platform/linuxbsd/offscreen/display_server_offscreen.h
+new file mode 100644
+index 0000000..5e92583
+--- /dev/null
++++ b/platform/linuxbsd/offscreen/display_server_offscreen.h
+@@ -0,0 +1,62 @@
++/**************************************************************************/
++/*  display_server_offscreen.h                                            */
++/**************************************************************************/
++/* Experimental "offscreen" display server: renders with a real          */
++/* RenderingDevice (Vulkan) into a VK_EXT_headless_surface swapchain, so */
++/* games can run and be screenshotted without X11/Wayland.               */
++/**************************************************************************/
++
++#pragma once
++
++#include "servers/display/display_server_headless.h"
++
++#ifdef RD_ENABLED
++class RenderingDevice;
++class RenderingContextDriver;
++#endif
++
++class DisplayServerOffscreen : public DisplayServerHeadless {
++	GDSOFTCLASS(DisplayServerOffscreen, DisplayServerHeadless);
++
++	Size2i window_size = Size2i(1152, 648);
++	DisplayServerEnums::VSyncMode vsync_mode = DisplayServerEnums::VSYNC_DISABLED;
++	Callable rect_changed_callback;
++
++#ifdef RD_ENABLED
++	RenderingContextDriver *rendering_context = nullptr;
++	RenderingDevice *rendering_device = nullptr;
++#endif
++
++	static Vector<String> get_rendering_drivers_func();
++	static DisplayServer *create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error);
++
++public:
++	String get_name() const override { return "offscreen"; }
++
++	int get_screen_count() const override { return 1; }
++	Size2i screen_get_size(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override { return window_size; }
++	Rect2i screen_get_usable_rect(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override { return Rect2i(Point2i(), window_size); }
++	float screen_get_refresh_rate(int p_screen = DisplayServerEnums::SCREEN_OF_MAIN_WINDOW) const override { return 60.0; }
++
++	Vector<DisplayServerEnums::WindowID> get_window_list() const override;
++	int window_get_current_screen(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override { return 0; }
++
++	void window_set_rect_changed_callback(const Callable &p_callable, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override { rect_changed_callback = p_callable; }
++
++	void window_set_size(const Size2i p_size, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
++	Size2i window_get_size(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override { return window_size; }
++	Size2i window_get_size_with_decorations(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override { return window_size; }
++
++	DisplayServerEnums::WindowMode window_get_mode(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override { return DisplayServerEnums::WINDOW_MODE_WINDOWED; }
++
++	void window_set_vsync_mode(DisplayServerEnums::VSyncMode p_vsync_mode, DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
++	DisplayServerEnums::VSyncMode window_get_vsync_mode(DisplayServerEnums::WindowID p_window) const override;
++
++	bool window_can_draw(DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override { return true; }
++	bool can_any_window_draw() const override { return true; }
++
++	static void register_offscreen_driver();
++
++	DisplayServerOffscreen(const String &p_rendering_driver, DisplayServerEnums::VSyncMode p_vsync_mode, const Vector2i &p_resolution, Error &r_error);
++	~DisplayServerOffscreen();
++};
+diff --git a/platform/linuxbsd/os_linuxbsd.cpp b/platform/linuxbsd/os_linuxbsd.cpp
+index 43d7129..a87f18d 100644
+--- a/platform/linuxbsd/os_linuxbsd.cpp
++++ b/platform/linuxbsd/os_linuxbsd.cpp
+@@ -30,6 +30,8 @@
+ 
+ #include "os_linuxbsd.h"
+ 
++#include "offscreen/display_server_offscreen.h"
++
+ #include "core/io/certs_compressed.gen.h"
+ #include "core/io/dir_access.h"
+ #include "core/io/file_access.h"
+@@ -1304,6 +1306,8 @@ OS_LinuxBSD::OS_LinuxBSD() {
+ 	AudioDriverManager::add_driver(&driver_alsa);
+ #endif
+ 
++	DisplayServerOffscreen::register_offscreen_driver();
++
+ #ifdef X11_ENABLED
+ 	DisplayServerX11::register_x11_driver();
+ #endif
