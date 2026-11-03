@@ -1,0 +1,11 @@
+# Невалидно: requires.engine — не диапазон версий по грамматике контракта.
+specVersion: "1.0"
+module:
+  id: "synapse.core.ui"
+  version: "1.0.0"
+  titleKey: "module.synapse_core_ui.title"
+requires:
+  spec: "1.0"
+  engine: "version 4"
+provides:
+  scenes: ["scene.main-menu"]

@@ -1,0 +1,22 @@
+{
+  "registryVersion": "1.0",
+  "specVersion": "1.0",
+  "catalog": {
+    "namespace": "errors",
+    "keyPattern": "^errors(\\.[a-z][a-z0-9-]*)+$",
+    "defaultLocale": "en",
+    "locales": ["en", "ru", "zh-Hans", "ja", "pt-BR", "de", "fr", "ko"]
+  },
+  "params": { "required": ["path", "expected", "actual"] },
+  "codes": [
+    {
+      "code": "field.type",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "summary": "Значение неверного типа.",
+      "params": ["path", "expected", "actual"],
+      "catalogKey": "errors.field.type",
+      "message": "Значение должно быть строкой"
+    }
+  ]
+}

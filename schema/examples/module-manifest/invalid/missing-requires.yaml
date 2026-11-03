@@ -1,0 +1,8 @@
+# Невалидно: нет обязательного блока requires — модуль не объявляет совместимость.
+specVersion: "1.0"
+module:
+  id: "synapse.core.ui"
+  version: "1.0.0"
+  titleKey: "module.synapse_core_ui.title"
+provides:
+  scenes: ["scene.main-menu"]

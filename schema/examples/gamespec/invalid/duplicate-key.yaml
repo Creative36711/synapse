@@ -1,0 +1,10 @@
+# Невалидно: ключ game.id повторяется. YAML-парсер обязан отвергнуть файл,
+# а не взять последнее значение (код yaml.duplicate-key).
+specVersion: "1.0"
+game:
+  id: "example.minimal"
+  id: "example.other"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.main-menu"

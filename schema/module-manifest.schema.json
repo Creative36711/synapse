@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.synapse.invalid/module-manifest/1.0",
+  "title": "Манифест модуля 1.0 (черновик K-2)",
+  "$comment": "Структурный контракт манифеста модуля ядра: версия, зависимости, конфликты, предоставляемые смысловые ID. Проверяется JSON Schema 2020-12. Разрешение версий, цикл зависимостей и конфликты как факт — K-4. Схема самодостаточна: внешних $ref нет, проверка работает офлайн (INV-1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "specVersion",
+    "module",
+    "requires"
+  ],
+  "properties": {
+    "specVersion": {
+      "type": "string",
+      "enum": [
+        "1.0"
+      ],
+      "description": "Версия контракта, под которую написан манифест."
+    },
+    "module": {
+      "$ref": "#/$defs/module"
+    },
+    "requires": {
+      "$ref": "#/$defs/requires"
+    },
+    "dependencies": {
+      "type": "array",
+      "default": [],
+      "description": "Зависимости модуля. Цикл — ошибка module.dependency.cycle (INV-5), обнаруживается в K-4 по этой структуре.",
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "default": [],
+      "description": "Явные конфликты: модули, которые нельзя загружать одновременно с этим. Несовместимость версий — K-4.",
+      "items": {
+        "$ref": "#/$defs/conflict"
+      }
+    },
+    "provides": {
+      "$ref": "#/$defs/provides"
+    }
+  },
+  "$defs": {
+    "moduleId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*){2,5}$",
+      "description": "Смысловой идентификатор модуля: 3–6 сегментов через точку, нижний регистр. Пространство имён задаёт владельца (INV-3).",
+      "examples": [
+        "synapse.core.ui",
+        "synapse.core.platformer"
+      ]
+    },
+    "sceneId": {
+      "type": "string",
+      "pattern": "^scene(\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$",
+      "description": "Смысловой идентификатор сцены с обязательным префиксом вида scene. (INV-3). Путь к файлу сцены сюда не пишется.",
+      "examples": [
+        "scene.main-menu",
+        "scene.platformer.level"
+      ]
+    },
+    "translationKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$",
+      "description": "Ключ каталога перевода (INV-9, §9 регламента). Пользовательский текст в контракте не хранится — только ключ.",
+      "examples": [
+        "game.example_minimal.title"
+      ]
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+      "description": "Версия по SemVer 2.0.0 без ведущих нулей. Диапазоны и их разрешение — versionRange и K-4.",
+      "examples": [
+        "0.1.0",
+        "1.4.2"
+      ]
+    },
+    "versionRange": {
+      "type": "string",
+      "pattern": "^(?:\\*|\\^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?|~(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?|(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?|(?:>=|>|<=|<|=)(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?: (?:>=|>|<=|<|=)(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?)*)$",
+      "description": "Диапазон версий: «*», «^X.Y.Z», «~X.Y.Z», точная «X.Y.Z», либо список компараторов через пробел. Грамматика — контракт, разрешение диапазона — K-4.",
+      "examples": [
+        "^1.2.0",
+        ">=1.0.0 <2.0.0",
+        "*"
+      ]
+    },
+    "locale": {
+      "type": "string",
+      "enum": [
+        "en",
+        "ru",
+        "zh-Hans",
+        "ja",
+        "pt-BR",
+        "de",
+        "fr",
+        "ko"
+      ],
+      "description": "Локаль из фиксированного набора §9. en — локаль по умолчанию и юридически аутентичная (INV-10)."
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Идентичность модуля. Определение не хранит изменяемое состояние экземпляра: полей state, save, runtime здесь нет (INV-4).",
+      "required": [
+        "id",
+        "version",
+        "titleKey"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/moduleId"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "titleKey": {
+          "$ref": "#/$defs/translationKey"
+        },
+        "descriptionKey": {
+          "$ref": "#/$defs/translationKey"
+        }
+      }
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Требования к среде: версия контракта и версия движка. Жанровых ветвлений в контракте нет (INV-7).",
+      "required": [
+        "spec",
+        "engine"
+      ],
+      "properties": {
+        "spec": {
+          "type": "string",
+          "enum": [
+            "1.0"
+          ]
+        },
+        "engine": {
+          "$ref": "#/$defs/versionRange"
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/moduleId"
+        },
+        "version": {
+          "$ref": "#/$defs/versionRange"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Конфликт обязан быть объясним пользователю через ключ каталога, а не литералом (INV-9).",
+      "required": [
+        "id",
+        "version",
+        "reasonKey"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/moduleId"
+        },
+        "version": {
+          "$ref": "#/$defs/versionRange"
+        },
+        "reasonKey": {
+          "$ref": "#/$defs/translationKey"
+        }
+      }
+    },
+    "provides": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Что модуль добавляет в сборку: смысловые ID сцен и локали. Именно по этому списку K-4 разрешает entry.scene игры.",
+      "required": [
+        "scenes"
+      ],
+      "properties": {
+        "scenes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/sceneId"
+          }
+        },
+        "locales": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/locale"
+          }
+        }
+      }
+    }
+  }
+}
