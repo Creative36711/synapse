@@ -111,7 +111,7 @@ describe('GameSpec local validator public CLI', () => {
     });
   }
 
-  test('cycle example records a -> b -> a statically and is not resolved by K-3', () => {
+  test('validate rejects the real cycle and reports the closed path per O-5', () => {
     const readYaml = (path) => parseDocument(readFileSync(path, 'utf8'), {
       version: '1.2', schema: 'core', uniqueKeys: true, merge: false, customTags: [],
     }).toJS();
@@ -126,7 +126,11 @@ describe('GameSpec local validator public CLI', () => {
     assert.equal(beta.dependencies[0].id, alphaId);
 
     const result = invoke(join(ROOT, 'examples/cycle.game.yaml'));
-    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-    assert.equal(result.report.ok, true);
+    assert.notEqual(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    assert.equal(result.report.ok, false);
+    assert.equal(result.report.errors.length, 1);
+    const [error] = result.report.errors;
+    assert.equal(error.code, 'module.dependency.cycle');
+    assert.match(error.params.actual, /synapse\.demo\.alpha -> synapse\.demo\.beta -> synapse\.demo\.alpha/);
   });
 });
