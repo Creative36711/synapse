@@ -1,0 +1,10 @@
+specVersion: "1.0"
+game:
+  id: "synapse.test.duplicatedependency"
+  version: "1.0.0"
+  titleKey: "game.synapse_test_duplicate_dependency.title"
+entry:
+  scene: "scene.main-menu"
+modules:
+  - id: "synapse.test.parent"
+    version: "1.0.0"

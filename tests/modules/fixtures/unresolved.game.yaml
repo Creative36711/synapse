@@ -1,0 +1,10 @@
+specVersion: "1.0"
+game:
+  id: "synapse.test.unresolved"
+  version: "1.0.0"
+  titleKey: "game.synapse_test_unresolved.title"
+entry:
+  scene: "scene.not-provided"
+modules:
+  - id: "synapse.test.empty"
+    version: "1.0.0"

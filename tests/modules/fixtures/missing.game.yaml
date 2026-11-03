@@ -1,0 +1,10 @@
+specVersion: "1.0"
+game:
+  id: "synapse.test.missing"
+  version: "1.0.0"
+  titleKey: "game.synapse_test_missing.title"
+entry:
+  scene: "scene.main-menu"
+modules:
+  - id: "synapse.test.absent"
+    version: "^1.0.0"

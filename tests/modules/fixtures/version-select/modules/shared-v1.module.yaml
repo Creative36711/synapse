@@ -1,0 +1,10 @@
+specVersion: "1.0"
+module:
+  id: "synapse.test.shared"
+  version: "1.7.0"
+  titleKey: "module.synapse_test_shared.title"
+requires:
+  spec: "1.0"
+  engine: "*"
+provides:
+  scenes: []

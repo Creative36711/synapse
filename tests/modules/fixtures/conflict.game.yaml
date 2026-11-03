@@ -1,0 +1,12 @@
+specVersion: "1.0"
+game:
+  id: "synapse.test.conflict"
+  version: "1.0.0"
+  titleKey: "game.synapse_test_conflict.title"
+entry:
+  scene: "scene.main-menu"
+modules:
+  - id: "synapse.test.alpha"
+    version: "^1.0.0"
+  - id: "synapse.test.beta"
+    version: "^1.0.0"
