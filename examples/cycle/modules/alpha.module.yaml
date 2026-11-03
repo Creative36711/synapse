@@ -1,0 +1,14 @@
+# Static graph edge: synapse.demo.alpha -> synapse.demo.beta. Not consumed by K-3.
+specVersion: "1.0"
+module:
+  id: "synapse.demo.alpha"
+  version: "1.0.0"
+  titleKey: "module.synapse_demo_alpha.title"
+requires:
+  spec: "1.0"
+  engine: ">=4.7.0 <5.0.0"
+dependencies:
+  - id: "synapse.demo.beta"
+    version: "1.0.0"
+provides:
+  scenes: ["scene.main-menu"]

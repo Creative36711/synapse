@@ -1,0 +1,7 @@
+specVersion: "1.0"
+game:
+  id: "example.validation"
+  version: 1
+  titleKey: "game.validation.title"
+entry:
+  scene: "scene.main-menu"

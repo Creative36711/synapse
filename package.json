@@ -10,7 +10,8 @@
   },
   "scripts": {
     "check:contracts": "node tests/contracts/check-contracts.mjs",
-    "test:contracts": "node --test tests/contracts/*.test.mjs"
+    "test:contracts": "node --test tests/contracts/*.test.mjs",
+    "test:validation": "node --test tests/validation/*.test.mjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",

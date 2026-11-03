@@ -1,0 +1,10 @@
+specVersion: "1.0"
+game:
+  id: "example.translation"
+  version: "0.1.0"
+  titleKey: "game.example_translation.title"
+entry:
+  scene: "scene.main-menu"
+locales:
+  default: "en"
+  supported: ["en", "de"]

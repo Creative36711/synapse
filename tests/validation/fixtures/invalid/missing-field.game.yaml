@@ -1,0 +1,6 @@
+game:
+  id: "example.validation"
+  version: "0.1.0"
+  titleKey: "game.validation.title"
+entry:
+  scene: "scene.main-menu"

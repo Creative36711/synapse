@@ -1,0 +1,14 @@
+# Static K-4 fixture only: modules synapse.demo.alpha -> synapse.demo.beta -> synapse.demo.alpha.
+# K-3 validates this GameSpec but does not resolve module manifests or claim to detect the cycle.
+specVersion: "1.0"
+game:
+  id: "example.cycle"
+  version: "0.1.0"
+  titleKey: "game.example_cycle.title"
+entry:
+  scene: "scene.main-menu"
+modules:
+  - id: "synapse.demo.alpha"
+    version: "1.0.0"
+  - id: "synapse.demo.beta"
+    version: "1.0.0"
