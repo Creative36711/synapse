@@ -1,0 +1,10 @@
+specVersion: "1.0"
+game:
+  id: "synapse.test.version"
+  version: "1.0.0"
+  titleKey: "game.synapse_test_version.title"
+entry:
+  scene: "scene.main-menu"
+modules:
+  - id: "synapse.test.versioned"
+    version: "^3.0.0"

@@ -1,0 +1,12 @@
+specVersion: "1.0"
+game:
+  id: "synapse.test.duplicate"
+  version: "1.0.0"
+  titleKey: "game.synapse_test_duplicate.title"
+entry:
+  scene: "scene.main-menu"
+modules:
+  - id: "synapse.test.repeat"
+    version: "1.0.0"
+  - id: "synapse.test.repeat"
+    version: "1.0.0"

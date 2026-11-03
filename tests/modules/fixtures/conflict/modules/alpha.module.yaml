@@ -1,0 +1,14 @@
+specVersion: "1.0"
+module:
+  id: "synapse.test.alpha"
+  version: "1.0.0"
+  titleKey: "module.synapse_test_alpha.title"
+requires:
+  spec: "1.0"
+  engine: "*"
+conflicts:
+  - id: "synapse.test.beta"
+    version: "^1.0.0"
+    reasonKey: "module.synapse_test_alpha.conflict.beta"
+provides:
+  scenes: ["scene.main-menu"]

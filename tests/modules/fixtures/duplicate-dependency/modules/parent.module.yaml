@@ -1,0 +1,15 @@
+specVersion: "1.0"
+module:
+  id: "synapse.test.parent"
+  version: "1.0.0"
+  titleKey: "module.synapse_test_parent.title"
+requires:
+  spec: "1.0"
+  engine: "*"
+dependencies:
+  - id: "synapse.test.child"
+    version: "1.0.0"
+  - id: "synapse.test.child"
+    version: "1.0.0"
+provides:
+  scenes: ["scene.main-menu"]

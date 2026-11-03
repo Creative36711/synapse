@@ -10,5 +10,10 @@
   "errors.locale.key.missing": "Translation key {expected} is missing at {path} for locale {locale}.",
   "errors.definition.state.forbidden": "Definitions cannot store mutable instance state: {field} at {path} is forbidden.",
   "errors.module.duplicate": "Module ID {moduleId} is repeated at {path}; module IDs must be unique.",
-  "errors.cli.usage": "Usage: validate <GameSpec path>"
+  "errors.module.dependency.missing": "Required module {actual} for {requiredBy} is missing at {path} (constraint {constraint}).",
+  "errors.module.dependency.cycle": "Module dependency cycle: {cycle}.",
+  "errors.module.version.unsatisfied": "No available version satisfies {constraint} at {path}; available: {available}.",
+  "errors.module.conflict": "Module {conflictId} conflicts with the selected build at {path} (constraint {constraint}).",
+  "errors.ref.unresolved": "No selected module provides {refKind} {actual} at {path}.",
+  "errors.cli.usage": "Usage: validate|resolve <GameSpec path>"
 }

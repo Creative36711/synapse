@@ -1,0 +1,10 @@
+specVersion: "1.0"
+module:
+  id: "synapse.test.versioned"
+  version: "2.4.1"
+  titleKey: "module.synapse_test_versioned.title"
+requires:
+  spec: "1.0"
+  engine: "*"
+provides:
+  scenes: ["scene.main-menu"]

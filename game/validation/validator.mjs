@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import Ajv2020 from 'ajv/dist/2020.js';
 import { parseDocument } from 'yaml';
+import { resolveGameSpec } from '../modules/resolver.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCHEMA_PATH = join(REPO_ROOT, 'schema/gamespec.schema.json');
@@ -264,6 +265,9 @@ function runValidation(inputPath) {
   errors.push(...semanticErrors(parsed.value, specPath, catalog));
   if (errors.length > 0) return { ok: false, errors };
 
+  const resolution = resolveGameSpec(parsed.value, specPath);
+  if (!resolution.ok) return resolution;
+
   const locales = parsed.value.locales ?? { default: 'en', supported: ['en'] };
   return {
     ok: true,
@@ -271,6 +275,7 @@ function runValidation(inputPath) {
     version: parsed.value.game.version,
     entryScene: parsed.value.entry.scene,
     modules: parsed.value.modules ?? [],
+    moduleOrder: resolution.order,
     locales: {
       default: locales.default,
       supported: locales.supported,

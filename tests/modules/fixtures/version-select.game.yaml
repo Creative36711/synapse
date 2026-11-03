@@ -1,0 +1,12 @@
+specVersion: "1.0"
+game:
+  id: "synapse.test.versionselect"
+  version: "1.0.0"
+  titleKey: "game.synapse_test_version_select.title"
+entry:
+  scene: "scene.main-menu"
+modules:
+  - id: "synapse.test.consumera"
+    version: "1.0.0"
+  - id: "synapse.test.consumerb"
+    version: "1.0.0"

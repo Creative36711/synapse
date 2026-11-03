@@ -1,0 +1,15 @@
+specVersion: "1.0"
+module:
+  id: "synapse.test.app"
+  version: "1.0.0"
+  titleKey: "module.synapse_test_app.title"
+requires:
+  spec: "1.0"
+  engine: "*"
+dependencies:
+  - id: "synapse.test.core"
+    version: "^1.0.0"
+  - id: "synapse.test.data"
+    version: "^1.0.0"
+provides:
+  scenes: []
