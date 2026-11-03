@@ -1,0 +1,19 @@
+{
+  "errors.field.required": "Отсутствует обязательное поле по пути {path}; ожидалось: {expected}.",
+  "errors.field.unknown": "Неизвестное поле {actual} по пути {path}; допустимые поля: {expected}.",
+  "errors.field.type": "Значение по пути {path} — {actual}; ожидаемый тип: {expected}.",
+  "errors.field.enum": "Значение по пути {path} — {actual}; ожидалось одно из: {expected}.",
+  "errors.field.pattern": "Значение по пути {path} — {actual}; оно должно соответствовать шаблону {expected}.",
+  "errors.field.unique": "Значения по пути {path} должны быть уникальными; фактическое значение: {actual}.",
+  "errors.yaml.duplicate-key": "Ключ YAML {key} повторяется в строке {line}, столбце {column}.",
+  "errors.yaml.syntax": "Синтаксис YAML неверен в строке {line}, столбце {column}; ожидался формат {expected}.",
+  "errors.locale.key.missing": "В локали {locale} для каталога отсутствует ключ перевода {expected} по пути {path}.",
+  "errors.definition.state.forbidden": "Определения не могут хранить изменяемое состояние экземпляра: поле {field} по пути {path} запрещено.",
+  "errors.module.duplicate": "ID модуля {moduleId} повторяется по пути {path}; ID модулей должны быть уникальными.",
+  "errors.module.dependency.missing": "По пути {path} отсутствует обязательный модуль {actual} для {requiredBy} (ограничение {constraint}).",
+  "errors.module.dependency.cycle": "Цикл зависимостей модулей: {cycle}.",
+  "errors.module.version.unsatisfied": "Нет доступной версии, удовлетворяющей ограничению {constraint} по пути {path}; доступные версии: {available}.",
+  "errors.module.conflict": "Модуль {conflictId} конфликтует с выбранной сборкой по пути {path} (ограничение {constraint}).",
+  "errors.ref.unresolved": "Ни один выбранный модуль не предоставляет {refKind} {actual} по пути {path}.",
+  "errors.cli.usage": "Использование: validate|resolve <путь к GameSpec>"
+}

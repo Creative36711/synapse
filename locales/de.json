@@ -1,0 +1,19 @@
+{
+  "errors.field.required": "Das Pflichtfeld unter {path} fehlt; erwartet wurde {expected}.",
+  "errors.field.unknown": "Unbekanntes Feld {actual} unter {path}; zulässige Felder: {expected}.",
+  "errors.field.type": "Der Wert unter {path} ist {actual}; erwartet wurde der Typ {expected}.",
+  "errors.field.enum": "Der Wert unter {path} ist {actual}; erwartet wurde einer der Werte {expected}.",
+  "errors.field.pattern": "Der Wert unter {path} ist {actual}; erwartet wurde ein Wert passend zu {expected}.",
+  "errors.field.unique": "Werte unter {path} müssen eindeutig sein; tatsächlicher Wert: {actual}.",
+  "errors.yaml.duplicate-key": "Der YAML-Schlüssel {key} ist in Zeile {line}, Spalte {column} doppelt vorhanden.",
+  "errors.yaml.syntax": "Die YAML-Syntax ist in Zeile {line}, Spalte {column} ungültig; erwartet wurde {expected}.",
+  "errors.locale.key.missing": "Der Übersetzungsschlüssel {expected} fehlt unter {path} für die Locale {locale}.",
+  "errors.definition.state.forbidden": "Definitionen dürfen keinen veränderlichen Instanzzustand speichern: Das Feld {field} unter {path} ist unzulässig.",
+  "errors.module.duplicate": "Die Modul-ID {moduleId} kommt unter {path} mehrfach vor; Modul-IDs müssen eindeutig sein.",
+  "errors.module.dependency.missing": "Das für {requiredBy} erforderliche Modul {actual} fehlt unter {path} (Einschränkung {constraint}).",
+  "errors.module.dependency.cycle": "Zyklus in den Modulabhängigkeiten: {cycle}.",
+  "errors.module.version.unsatisfied": "Keine verfügbare Version erfüllt {constraint} unter {path}; verfügbar: {available}.",
+  "errors.module.conflict": "Modul {conflictId} steht unter {path} im Konflikt mit dem ausgewählten Build (Einschränkung {constraint}).",
+  "errors.ref.unresolved": "Kein ausgewähltes Modul stellt {refKind} {actual} unter {path} bereit.",
+  "errors.cli.usage": "Verwendung: validate|resolve <GameSpec-Pfad>"
+}

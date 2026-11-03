@@ -1,0 +1,19 @@
+{
+  "errors.field.required": "路径 {path} 缺少必填字段；预期为 {expected}。",
+  "errors.field.unknown": "路径 {path} 存在未知字段 {actual}；允许的字段为 {expected}。",
+  "errors.field.type": "路径 {path} 的值为 {actual}；预期类型为 {expected}。",
+  "errors.field.enum": "路径 {path} 的值为 {actual}；预期值之一为 {expected}。",
+  "errors.field.pattern": "路径 {path} 的值为 {actual}；预期匹配模式 {expected}。",
+  "errors.field.unique": "路径 {path} 的值必须唯一；实际值为 {actual}。",
+  "errors.yaml.duplicate-key": "YAML 键 {key} 在第 {line} 行、第 {column} 列重复。",
+  "errors.yaml.syntax": "YAML 语法在第 {line} 行、第 {column} 列无效；预期格式为 {expected}。",
+  "errors.locale.key.missing": "语言区域 {locale} 的目录在路径 {path} 缺少翻译键 {expected}。",
+  "errors.definition.state.forbidden": "定义不能保存可变的实例状态：路径 {path} 上的字段 {field} 被禁止。",
+  "errors.module.duplicate": "模块 ID {moduleId} 在路径 {path} 重复；模块 ID 必须唯一。",
+  "errors.module.dependency.missing": "路径 {path} 缺少 {requiredBy} 所需的模块 {actual}（约束 {constraint}）。",
+  "errors.module.dependency.cycle": "模块依赖循环：{cycle}。",
+  "errors.module.version.unsatisfied": "路径 {path} 上没有版本满足约束 {constraint}；可用版本：{available}。",
+  "errors.module.conflict": "模块 {conflictId} 与所选构建冲突，位置：{path}（约束 {constraint}）。",
+  "errors.ref.unresolved": "所选模块均未提供路径 {path} 上的 {refKind} {actual}。",
+  "errors.cli.usage": "用法：validate|resolve <GameSpec 路径>"
+}

@@ -1,0 +1,19 @@
+{
+  "errors.field.required": "{path} に必須フィールドがありません。期待値: {expected}。",
+  "errors.field.unknown": "{path} に未知のフィールド {actual} があります。使用可能なフィールド: {expected}。",
+  "errors.field.type": "{path} の値は {actual} です。期待される型: {expected}。",
+  "errors.field.enum": "{path} の値は {actual} です。期待される値のいずれか: {expected}。",
+  "errors.field.pattern": "{path} の値は {actual} です。パターン {expected} に一致する値が必要です。",
+  "errors.field.unique": "{path} の値は一意である必要があります。実際の値: {actual}。",
+  "errors.yaml.duplicate-key": "YAML キー {key} が {line} 行 {column} 列で重複しています。",
+  "errors.yaml.syntax": "{line} 行 {column} 列の YAML 構文が無効です。期待される形式: {expected}。",
+  "errors.locale.key.missing": "ロケール {locale} のカタログで、パス {path} に翻訳キー {expected} がありません。",
+  "errors.definition.state.forbidden": "定義に可変インスタンス状態を保存できません。パス {path} のフィールド {field} は禁止されています。",
+  "errors.module.duplicate": "モジュール ID {moduleId} がパス {path} で重複しています。モジュール ID は一意である必要があります。",
+  "errors.module.dependency.missing": "パス {path} で、{requiredBy} に必要なモジュール {actual} が見つかりません（制約 {constraint}）。",
+  "errors.module.dependency.cycle": "モジュール依存関係の循環: {cycle}。",
+  "errors.module.version.unsatisfied": "パス {path} において、制約 {constraint} を満たすバージョンがありません。利用可能なバージョン: {available}。",
+  "errors.module.conflict": "モジュール {conflictId} はパス {path} で選択されたビルドと競合します（制約 {constraint}）。",
+  "errors.ref.unresolved": "選択されたモジュールは、パス {path} の {refKind} {actual} を提供していません。",
+  "errors.cli.usage": "使い方: validate|resolve <GameSpec のパス>"
+}

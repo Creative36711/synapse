@@ -12,7 +12,10 @@
     "check:contracts": "node tests/contracts/check-contracts.mjs",
     "test:contracts": "node --test tests/contracts/*.test.mjs",
     "test:validation": "node --test tests/validation/*.test.mjs",
-    "test:modules": "node --test tests/modules/*.test.mjs"
+    "test:modules": "node --test tests/modules/*.test.mjs",
+    "i18n-check": "node tools/i18n/check.mjs",
+    "i18n-no-literals": "node tools/i18n/no-literals.mjs",
+    "test:i18n": "node --test tests/i18n/*.test.mjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",

@@ -1,0 +1,44 @@
+name: i18n
+
+on:
+  push:
+    paths:
+      - 'locales/**'
+      - 'game/i18n/**'
+      - 'game/**/*.gd'
+      - 'game/**/*.tscn'
+      - 'tools/i18n/**'
+      - 'tests/i18n/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/i18n.yml'
+  pull_request:
+    paths:
+      - 'locales/**'
+      - 'game/i18n/**'
+      - 'game/**/*.gd'
+      - 'game/**/*.tscn'
+      - 'tools/i18n/**'
+      - 'tests/i18n/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/i18n.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  i18n:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:i18n
+      - run: npm run i18n-check
+      - run: npm run i18n-no-literals
+      - run: npm run check:contracts
