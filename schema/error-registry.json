@@ -1,0 +1,162 @@
+{
+  "$schema": "https://schema.synapse.invalid/error-registry/1.0",
+  "registryVersion": "1.0",
+  "specVersion": "1.0",
+  "catalog": {
+    "namespace": "errors",
+    "keyPattern": "^errors(\\.[a-z][a-z0-9-]*)+$",
+    "defaultLocale": "en",
+    "locales": ["en", "ru", "zh-Hans", "ja", "pt-BR", "de", "fr", "ko"]
+  },
+  "params": {
+    "required": ["path", "expected", "actual"]
+  },
+  "codes": [
+    {
+      "code": "field.unknown",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "additionalProperties",
+      "summary": "Неизвестное поле в определении. Контракт не расширяемый: лишний ключ — ошибка, а не предупреждение.",
+      "params": ["path", "expected", "actual"],
+      "catalogKey": "errors.field.unknown"
+    },
+    {
+      "code": "field.required",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "required",
+      "summary": "Отсутствует обязательное поле. path указывает на имя отсутствующего ключа, actual — null.",
+      "params": ["path", "expected", "actual"],
+      "catalogKey": "errors.field.required"
+    },
+    {
+      "code": "field.type",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "type",
+      "summary": "Значение неверного типа: строка вместо числа, объект вместо массива и т. п.",
+      "params": ["path", "expected", "actual"],
+      "catalogKey": "errors.field.type"
+    },
+    {
+      "code": "field.enum",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "enum",
+      "summary": "Значение вне закрытого набора: версия контракта, локаль, стадия проверки.",
+      "params": ["path", "expected", "actual"],
+      "catalogKey": "errors.field.enum"
+    },
+    {
+      "code": "field.pattern",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "pattern",
+      "summary": "Значение не соответствует грамматике контракта: смысловой ID, SemVer, диапазон версий, ключ каталога.",
+      "params": ["path", "expected", "actual"],
+      "catalogKey": "errors.field.pattern"
+    },
+    {
+      "code": "field.unique",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "uniqueItems",
+      "summary": "Повтор элемента в массиве, где повторы запрещены: смысловые ID сцен, локали, зависимости.",
+      "params": ["path", "expected", "actual"],
+      "catalogKey": "errors.field.unique"
+    },
+    {
+      "code": "yaml.duplicate-key",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "uniqueKeys",
+      "summary": "Повторяющийся ключ в YAML. Молчаливое перекрытие значений запрещено: файл не читается.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["key", "line"],
+      "catalogKey": "errors.yaml.duplicate-key"
+    },
+    {
+      "code": "yaml.syntax",
+      "stage": "structural",
+      "implementedIn": "K-2",
+      "schemaKeyword": "parse",
+      "summary": "Файл не является синтаксически корректным YAML 1.2 (core schema). path — корень документа, точное место в line/column.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["line", "column"],
+      "catalogKey": "errors.yaml.syntax"
+    },
+    {
+      "code": "definition.state.forbidden",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Определение пытается хранить изменяемое состояние экземпляра (state, save, runtime). Определения неизменяемы (INV-4); в K-2 тот же ввод отсекается структурно как field.unknown.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["field"],
+      "catalogKey": "errors.definition.state.forbidden"
+    },
+    {
+      "code": "locale.key.missing",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Ключ каталога перевода отсутствует для требуемой локали. Пользовательский текст не подставляется из кода (INV-9); локаль не меняет смысл проверки (INV-10).",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["locale", "catalog"],
+      "catalogKey": "errors.locale.key.missing"
+    },
+    {
+      "code": "module.duplicate",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Два разных объявления одного и того же смыслового ID модуля в одной сборке.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["moduleId"],
+      "catalogKey": "errors.module.duplicate"
+    },
+    {
+      "code": "module.dependency.missing",
+      "stage": "resolution",
+      "implementedIn": "K-4",
+      "summary": "Обязательная зависимость не найдена среди доступных модулей. Разрешение графа — K-4.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["requiredBy", "constraint"],
+      "catalogKey": "errors.module.dependency.missing"
+    },
+    {
+      "code": "module.dependency.cycle",
+      "stage": "resolution",
+      "implementedIn": "K-4",
+      "summary": "Цикл в графе зависимостей модулей — ошибка, а не предупреждение (INV-5). cycle — упорядоченный список ID, замыкающийся на первый элемент.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["cycle"],
+      "catalogKey": "errors.module.dependency.cycle"
+    },
+    {
+      "code": "module.version.unsatisfied",
+      "stage": "resolution",
+      "implementedIn": "K-4",
+      "summary": "Ни одна доступная версия модуля не удовлетворяет объявленному диапазону.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["constraint", "available"],
+      "catalogKey": "errors.module.version.unsatisfied"
+    },
+    {
+      "code": "module.conflict",
+      "stage": "resolution",
+      "implementedIn": "K-4",
+      "summary": "Сработал объявленный конфликт: модуль и конфликтующая цель попали в одну сборку в пересекающихся диапазонах.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["conflictId", "constraint"],
+      "catalogKey": "errors.module.conflict"
+    },
+    {
+      "code": "ref.unresolved",
+      "stage": "resolution",
+      "implementedIn": "K-4",
+      "summary": "Смысловой ID (например, entry.scene игры) не предоставлен ни одним подключённым модулем.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["refKind", "providedBy"],
+      "catalogKey": "errors.ref.unresolved"
+    }
+  ]
+}

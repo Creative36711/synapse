@@ -1,0 +1,59 @@
+{
+  "$comment": "Контрактные примеры GameSpec: что обязано проходить, что обязано падать и с каким кодом/путём.",
+  "schema": "../../gamespec.schema.json",
+  "valid": ["minimal.valid.yaml", "full.valid.yaml"],
+  "invalid": [
+    {
+      "file": "invalid/unknown-field.yaml",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/game/genre"
+    },
+    {
+      "file": "invalid/wrong-type.yaml",
+      "code": "field.type",
+      "keyword": "type",
+      "path": "/game/version"
+    },
+    {
+      "file": "invalid/missing-spec-version.yaml",
+      "code": "field.required",
+      "keyword": "required",
+      "path": "/specVersion"
+    },
+    {
+      "file": "invalid/bad-game-id.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/game/id"
+    },
+    {
+      "file": "invalid/bad-version.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/game/version"
+    },
+    {
+      "file": "invalid/unsupported-locale.yaml",
+      "code": "field.enum",
+      "keyword": "enum",
+      "path": "/locales/supported/1"
+    },
+    {
+      "file": "invalid/duplicate-locale.yaml",
+      "code": "field.unique",
+      "keyword": "uniqueItems",
+      "path": "/locales/supported"
+    },
+    {
+      "file": "invalid/duplicate-key.yaml",
+      "phase": "parse",
+      "code": "yaml.duplicate-key"
+    },
+    {
+      "file": "invalid/syntax.yaml",
+      "phase": "parse",
+      "code": "yaml.syntax"
+    }
+  ]
+}

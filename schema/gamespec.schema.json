@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.synapse.invalid/gamespec/1.0",
+  "title": "GameSpec 1.0 (черновик K-2)",
+  "$comment": "Структурный контракт описание игры. Проверяется JSON Schema 2020-12. Семантические правила (существование ключей каталога, default ∈ supported, доступность сцен) — K-3, разрешение зависимостей — K-4. Схема самодостаточна: внешних $ref нет, проверка работает офлайн (INV-1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "specVersion",
+    "game",
+    "entry"
+  ],
+  "properties": {
+    "specVersion": {
+      "type": "string",
+      "enum": [
+        "1.0"
+      ],
+      "description": "Версия контракта, под которую написан файл. Несовпадение — ошибка field.enum."
+    },
+    "game": {
+      "$ref": "#/$defs/game"
+    },
+    "entry": {
+      "$ref": "#/$defs/entry"
+    },
+    "modules": {
+      "type": "array",
+      "default": [],
+      "description": "Модули, которые подключает игра. Граф, версии и циклы проверяет K-4; здесь фиксируется только форма ссылки.",
+      "items": {
+        "$ref": "#/$defs/moduleRef"
+      }
+    },
+    "locales": {
+      "$ref": "#/$defs/locales"
+    }
+  },
+  "$defs": {
+    "gameId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*){1,4}$",
+      "description": "Смысловой идентификатор игры: 2–5 сегментов через точку, нижний регистр (INV-3). Не путь к файлу.",
+      "examples": [
+        "example.minimal",
+        "synapse.demo.garden"
+      ]
+    },
+    "moduleId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*){2,5}$",
+      "description": "Смысловой идентификатор модуля: 3–6 сегментов через точку, нижний регистр. Пространство имён задаёт владельца (INV-3).",
+      "examples": [
+        "synapse.core.ui",
+        "synapse.core.platformer"
+      ]
+    },
+    "sceneId": {
+      "type": "string",
+      "pattern": "^scene(\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$",
+      "description": "Смысловой идентификатор сцены с обязательным префиксом вида scene. (INV-3). Путь к файлу сцены сюда не пишется.",
+      "examples": [
+        "scene.main-menu",
+        "scene.platformer.level"
+      ]
+    },
+    "translationKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$",
+      "description": "Ключ каталога перевода (INV-9, §9 регламента). Пользовательский текст в контракте не хранится — только ключ.",
+      "examples": [
+        "game.example_minimal.title"
+      ]
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+      "description": "Версия по SemVer 2.0.0 без ведущих нулей. Диапазоны и их разрешение — versionRange и K-4.",
+      "examples": [
+        "0.1.0",
+        "1.4.2"
+      ]
+    },
+    "versionRange": {
+      "type": "string",
+      "pattern": "^(?:\\*|\\^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?|~(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?|(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?|(?:>=|>|<=|<|=)(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?: (?:>=|>|<=|<|=)(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?)*)$",
+      "description": "Диапазон версий: «*», «^X.Y.Z», «~X.Y.Z», точная «X.Y.Z», либо список компараторов через пробел. Грамматика — контракт, разрешение диапазона — K-4.",
+      "examples": [
+        "^1.2.0",
+        ">=1.0.0 <2.0.0",
+        "*"
+      ]
+    },
+    "locale": {
+      "type": "string",
+      "enum": [
+        "en",
+        "ru",
+        "zh-Hans",
+        "ja",
+        "pt-BR",
+        "de",
+        "fr",
+        "ko"
+      ],
+      "description": "Локаль из фиксированного набора §9. en — локаль по умолчанию и юридически аутентичная (INV-10)."
+    },
+    "game": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Идентичность игры. Определение не хранит изменяемое состояние экземпляра: полей state, save, runtime здесь нет (INV-4).",
+      "required": [
+        "id",
+        "version",
+        "titleKey"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/gameId"
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "titleKey": {
+          "$ref": "#/$defs/translationKey"
+        },
+        "descriptionKey": {
+          "$ref": "#/$defs/translationKey"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Точка входа игры — смысловой ID сцены, а не путь к файлу (INV-3).",
+      "required": [
+        "scene"
+      ],
+      "properties": {
+        "scene": {
+          "$ref": "#/$defs/sceneId"
+        }
+      }
+    },
+    "moduleRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/moduleId"
+        },
+        "version": {
+          "$ref": "#/$defs/versionRange"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false,
+          "description": "Необязательная зависимость: её отсутствие не ошибка (решение о warning — K-4)."
+        }
+      }
+    },
+    "locales": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Набор локалей игры. Условие «default входит в supported» проверяется семантически (K-3): JSON Schema не сравнивает два поля.",
+      "required": [
+        "default",
+        "supported"
+      ],
+      "properties": {
+        "default": {
+          "$ref": "#/$defs/locale"
+        },
+        "supported": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/locale"
+          }
+        }
+      }
+    }
+  }
+}

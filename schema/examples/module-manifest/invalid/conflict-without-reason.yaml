@@ -1,0 +1,14 @@
+# Невалидно: конфликт без reasonKey — пользователю нечего показать из каталога (INV-9).
+specVersion: "1.0"
+module:
+  id: "synapse.core.platformer"
+  version: "1.4.2"
+  titleKey: "module.synapse_core_platformer.title"
+requires:
+  spec: "1.0"
+  engine: ">=4.7.0 <5.0.0"
+conflicts:
+  - id: "synapse.legacy.platformer"
+    version: "*"
+provides:
+  scenes: ["scene.platformer.level"]

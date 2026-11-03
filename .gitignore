@@ -1,2 +1,4 @@
 # Godot caches
 .godot/
+# Node dependencies (contract checks only)
+node_modules/

@@ -1,0 +1,7 @@
+# Невалидно: нет обязательного specVersion — файл не привязан к версии контракта.
+game:
+  id: "example.minimal"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.main-menu"

@@ -1,0 +1,9 @@
+# Невалидно: поле genre не входит в контракт. Ядро не ветвится по жанру (INV-7).
+specVersion: "1.0"
+game:
+  id: "example.minimal"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+  genre: "platformer"
+entry:
+  scene: "scene.main-menu"

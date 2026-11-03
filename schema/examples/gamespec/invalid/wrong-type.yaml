@@ -1,0 +1,8 @@
+# Невалидно: версия игры — число, а контракт требует строку SemVer.
+specVersion: "1.0"
+game:
+  id: "example.minimal"
+  version: 1
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.main-menu"

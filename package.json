@@ -1,0 +1,19 @@
+{
+  "name": "synapse-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Проверяемые контракты ядра Synapse: GameSpec, манифест модуля, реестр кодов ошибок",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "check:contracts": "node tests/contracts/check-contracts.mjs",
+    "test:contracts": "node --test tests/contracts/*.test.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "yaml": "2.9.1"
+  }
+}

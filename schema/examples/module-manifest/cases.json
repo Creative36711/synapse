@@ -1,0 +1,55 @@
+{
+  "$comment": "Контрактные примеры манифеста модуля: что обязано проходить, что обязано падать и с каким кодом/путём.",
+  "schema": "../../module-manifest.schema.json",
+  "valid": ["minimal.valid.yaml", "full.valid.yaml"],
+  "invalid": [
+    {
+      "file": "invalid/unknown-field.yaml",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/runtime"
+    },
+    {
+      "file": "invalid/wrong-type.yaml",
+      "code": "field.type",
+      "keyword": "type",
+      "path": "/dependencies"
+    },
+    {
+      "file": "invalid/missing-requires.yaml",
+      "code": "field.required",
+      "keyword": "required",
+      "path": "/requires"
+    },
+    {
+      "file": "invalid/bad-module-id.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/module/id"
+    },
+    {
+      "file": "invalid/bad-range.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/requires/engine"
+    },
+    {
+      "file": "invalid/bad-spec-version.yaml",
+      "code": "field.enum",
+      "keyword": "enum",
+      "path": "/specVersion"
+    },
+    {
+      "file": "invalid/duplicate-scene.yaml",
+      "code": "field.unique",
+      "keyword": "uniqueItems",
+      "path": "/provides/scenes"
+    },
+    {
+      "file": "invalid/conflict-without-reason.yaml",
+      "code": "field.required",
+      "keyword": "required",
+      "path": "/conflicts/0/reasonKey"
+    }
+  ]
+}

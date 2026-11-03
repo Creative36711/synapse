@@ -1,0 +1,18 @@
+# Полная валидная GameSpec: идентичность, точка входа, модули, локали.
+specVersion: "1.0"
+game:
+  id: "synapse.demo.garden"
+  version: "1.2.3"
+  titleKey: "game.synapse_demo_garden.title"
+  descriptionKey: "game.synapse_demo_garden.description"
+entry:
+  scene: "scene.garden.title-screen"
+modules:
+  - id: "synapse.core.platformer"
+    version: "^1.2.0"
+  - id: "synapse.core.ui"
+    version: ">=1.0.0 <2.0.0"
+    optional: false
+locales:
+  default: "en"
+  supported: ["en", "ru", "de"]

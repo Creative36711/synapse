@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.synapse.invalid/error-registry/1.0",
+  "title": "Реестр кодов ошибок 1.0 (черновик K-2)",
+  "$comment": "Структурный контракт реестра диагностики ядра. Проверяется JSON Schema 2020-12. Реестр хранит только машиночитаемые code и params; пользовательский текст берётся из каталога перевода по catalogKey (INV-9, INV-10).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registryVersion",
+    "specVersion",
+    "catalog",
+    "params",
+    "codes"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Ссылка на мета-схему; значение не участвует в проверке данных."
+    },
+    "registryVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "specVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespace",
+        "keyPattern",
+        "defaultLocale",
+        "locales"
+      ],
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "const": "errors"
+        },
+        "keyPattern": {
+          "type": "string"
+        },
+        "defaultLocale": {
+          "type": "string",
+          "enum": [
+            "en"
+          ]
+        },
+        "locales": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "en",
+              "ru",
+              "zh-Hans",
+              "ja",
+              "pt-BR",
+              "de",
+              "fr",
+              "ko"
+            ]
+          }
+        }
+      }
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9]*$"
+          }
+        }
+      }
+    },
+    "codes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/code"
+      }
+    }
+  },
+  "$defs": {
+    "code": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Один код ошибки. Поля stage и implementedIn не пересекаются: stage — природа проверки, implementedIn — карточка, где она появится.",
+      "required": [
+        "code",
+        "stage",
+        "implementedIn",
+        "summary",
+        "params",
+        "catalogKey"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+        },
+        "stage": {
+          "type": "string",
+          "enum": [
+            "structural",
+            "semantic",
+            "resolution"
+          ]
+        },
+        "implementedIn": {
+          "type": "string",
+          "enum": [
+            "K-2",
+            "K-3",
+            "K-4"
+          ]
+        },
+        "schemaKeyword": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z]*$"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 8,
+          "description": "Текст для документации. В UI не выводится: там catalogKey (INV-9)."
+        },
+        "params": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9]*$"
+          },
+          "allOf": [
+            {
+              "contains": {
+                "const": "path"
+              }
+            },
+            {
+              "contains": {
+                "const": "expected"
+              }
+            },
+            {
+              "contains": {
+                "const": "actual"
+              }
+            }
+          ]
+        },
+        "extraParams": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9]*$"
+          }
+        },
+        "catalogKey": {
+          "type": "string",
+          "pattern": "^errors(\\.[a-z][a-z0-9-]*)+$"
+        }
+      }
+    }
+  }
+}

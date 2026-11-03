@@ -1,0 +1,24 @@
+# Полный валидный манифест: зависимости (в т. ч. необязательная), конфликт с причиной,
+# смысловые ID сцен и локали, которые модуль поставляет.
+specVersion: "1.0"
+module:
+  id: "synapse.core.platformer"
+  version: "1.4.2"
+  titleKey: "module.synapse_core_platformer.title"
+  descriptionKey: "module.synapse_core_platformer.description"
+requires:
+  spec: "1.0"
+  engine: ">=4.7.0 <5.0.0"
+dependencies:
+  - id: "synapse.core.physics"
+    version: "^1.2.0"
+  - id: "synapse.core.audio"
+    version: ">=1.0.0 <2.0.0"
+    optional: true
+conflicts:
+  - id: "synapse.legacy.platformer"
+    version: "*"
+    reasonKey: "module.synapse_core_platformer.conflict.legacy"
+provides:
+  scenes: ["scene.platformer.level", "scene.platformer.pause"]
+  locales: ["en", "ru"]

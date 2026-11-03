@@ -1,0 +1,8 @@
+# Невалидно: ID игры не по грамматике — пробелы, верхний регистр и один сегмент.
+specVersion: "1.0"
+game:
+  id: "Example Minimal"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.main-menu"

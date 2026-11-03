@@ -1,0 +1,25 @@
+{
+  "$comment": "Реестр — тоже определение: сам schema/error-registry.json служит валидным примером.",
+  "schema": "../../error-registry.schema.json",
+  "valid": ["../../error-registry.json"],
+  "invalid": [
+    {
+      "file": "invalid/missing-base-param.json",
+      "code": "field.required",
+      "keyword": "contains",
+      "path": "/codes/0/params"
+    },
+    {
+      "file": "invalid/unknown-stage.json",
+      "code": "field.enum",
+      "keyword": "enum",
+      "path": "/codes/0/stage"
+    },
+    {
+      "file": "invalid/message-field.json",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/codes/0/message"
+    }
+  ]
+}
