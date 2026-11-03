@@ -1,0 +1,19 @@
+{
+  "errors.field.required": "Le champ obligatoire à {path} est absent ; valeur attendue : {expected}.",
+  "errors.field.unknown": "Le champ {actual} à {path} est inconnu ; champs autorisés : {expected}.",
+  "errors.field.type": "La valeur à {path} est {actual} ; type attendu : {expected}.",
+  "errors.field.enum": "La valeur à {path} est {actual} ; une des valeurs attendues est {expected}.",
+  "errors.field.pattern": "La valeur à {path} est {actual} ; une valeur correspondant au motif {expected} est attendue.",
+  "errors.field.unique": "Les valeurs à {path} doivent être uniques ; valeur réelle : {actual}.",
+  "errors.yaml.duplicate-key": "La clé YAML {key} est répétée à la ligne {line}, colonne {column}.",
+  "errors.yaml.syntax": "La syntaxe YAML est invalide à la ligne {line}, colonne {column} ; format attendu : {expected}.",
+  "errors.locale.key.missing": "La clé de traduction {expected} manque à {path} pour la locale {locale}.",
+  "errors.definition.state.forbidden": "Les définitions ne peuvent pas stocker un état d’instance mutable : le champ {field} à {path} est interdit.",
+  "errors.module.duplicate": "L’identifiant du module {moduleId} est répété à {path} ; les identifiants de module doivent être uniques.",
+  "errors.module.dependency.missing": "Le module requis {actual} pour {requiredBy} est absent à {path} (contrainte {constraint}).",
+  "errors.module.dependency.cycle": "Cycle de dépendances entre modules : {cycle}.",
+  "errors.module.version.unsatisfied": "Aucune version disponible ne satisfait {constraint} à {path} ; versions disponibles : {available}.",
+  "errors.module.conflict": "Le module {conflictId} entre en conflit avec la compilation sélectionnée à {path} (contrainte {constraint}).",
+  "errors.ref.unresolved": "Aucun module sélectionné ne fournit {refKind} {actual} à {path}.",
+  "errors.cli.usage": "Utilisation : validate|resolve <chemin du GameSpec>"
+}
