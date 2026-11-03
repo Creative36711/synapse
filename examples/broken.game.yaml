@@ -1,0 +1,9 @@
+# Deliberately invalid example for the public validate command.
+specVersion: "1.0"
+game:
+  id: "example.broken"
+  version: "0.1.0"
+  titleKey: "game.example_broken.title"
+  genre: "platformer"
+entry:
+  scene: "scene.main-menu"

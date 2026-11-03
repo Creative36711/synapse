@@ -1,0 +1,14 @@
+{
+  "errors.field.required": "Required field at {path} is missing; expected {expected}.",
+  "errors.field.unknown": "Unknown field {actual} at {path}; allowed fields are {expected}.",
+  "errors.field.type": "Value at {path} is {actual}; expected type {expected}.",
+  "errors.field.enum": "Value at {path} is {actual}; expected one of {expected}.",
+  "errors.field.pattern": "Value at {path} is {actual}; expected a value matching {expected}.",
+  "errors.field.unique": "Values at {path} must be unique; actual value is {actual}.",
+  "errors.yaml.duplicate-key": "YAML key {key} is repeated at line {line}, column {column}.",
+  "errors.yaml.syntax": "YAML syntax is invalid at line {line}, column {column}; expected {expected}.",
+  "errors.locale.key.missing": "Translation key {expected} is missing at {path} for locale {locale}.",
+  "errors.definition.state.forbidden": "Definitions cannot store mutable instance state: {field} at {path} is forbidden.",
+  "errors.module.duplicate": "Module ID {moduleId} is repeated at {path}; module IDs must be unique.",
+  "errors.cli.usage": "Usage: validate <GameSpec path>"
+}

@@ -1,0 +1,9 @@
+specVersion: "1.0"
+game:
+  id: "example.validation"
+  version: "0.1.0"
+  titleKey: "game.validation.title"
+  state:
+    score: 0
+entry:
+  scene: "scene.main-menu"

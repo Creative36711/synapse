@@ -1,0 +1,7 @@
+specVersion: "1.0"
+game:
+  id: "example.validation"
+  version: "0.1.0"
+  titleKey: "game.validation.title"
+entry:
+  scene: "res://levels/menu.tscn"

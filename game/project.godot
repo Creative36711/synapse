@@ -1,0 +1,10 @@
+; Minimal Godot project used by the local Synapse CLI.
+config_version=5
+
+[application]
+config/name="Synapse"
+run/main_scene="res://cli/main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
