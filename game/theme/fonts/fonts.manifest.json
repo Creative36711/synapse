@@ -2,7 +2,7 @@
   "manifest_version": 1,
   "license": "SIL Open Font License 1.1",
   "license_file": "LICENSE_FONT",
-  "total_size_bytes": 22482076,
+  "total_size_bytes": 23111100,
   "fonts": [
     {
       "family": "Noto Sans JP",
@@ -42,6 +42,20 @@
       "sha256": "d45f67f0a7c0ca3f256950777ce6a61cc7ce5f9696d02900cbbaac25f8aa7d16",
       "glyph_count": 30890,
       "reserved_font_name": "Source"
+    },
+    {
+      "family": "Noto Sans",
+      "package": "@expo-google-fonts/noto-sans",
+      "package_version": "0.4.2",
+      "file": "NotoSans_400Regular.ttf",
+      "upstream_url": "https://fonts.google.com/specimen/Noto+Sans",
+      "package_url": "https://registry.npmjs.org/@expo-google-fonts/noto-sans/-/noto-sans-0.4.2.tgz",
+      "npm_integrity": "sha512-zYD8G2ijWLxqmquoQgghNh/x9p0yxWwArD0oxO1oXY1qx5vOd4t0Kbhnu/Cx8RTy08OgA8RtxuULZFaXwVPnPw==",
+      "size_bytes": 629024,
+      "sha256": "fe8c022f48d8dd29f17b744d16f9346f4357e16f7d4f7be58b000ae7c291b614",
+      "glyph_count": 3094,
+      "maxp_glyph_count": 4503,
+      "license_file": "LICENSE_FONT_NOTO_SANS"
     }
   ]
 }

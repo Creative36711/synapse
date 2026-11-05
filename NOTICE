@@ -2756,3 +2756,7 @@ The following unmodified regular-weight font files are from the listed `@expo-go
 - `game/theme/fonts/NotoSansJP_400Regular.ttf` — Noto Sans JP; package `@expo-google-fonts/noto-sans-jp@0.4.4`; upstream: https://fonts.google.com/specimen/Noto+Sans+JP; SHA-256: `6255ea4692e97ef27330304fb96fd650f9111f868cd585fcf2802d42823930e5`.
 - `game/theme/fonts/NotoSansKR_400Regular.ttf` — Noto Sans KR; package `@expo-google-fonts/noto-sans-kr@0.4.4`; upstream: https://fonts.google.com/specimen/Noto+Sans+KR; SHA-256: `b4a747e78805bc25b610dcfc3003cb5fb2e2ec034763774b24216ed15889eef4`.
 - `game/theme/fonts/NotoSansSC_400Regular.ttf` — Noto Sans SC; package `@expo-google-fonts/noto-sans-sc@0.4.4`; upstream: https://fonts.google.com/specimen/Noto+Sans+SC; SHA-256: `d45f67f0a7c0ca3f256950777ce6a61cc7ce5f9696d02900cbbaac25f8aa7d16`.
+
+## Base Latin/Cyrillic font (SIL Open Font License 1.1)
+
+- `game/theme/fonts/NotoSans_400Regular.ttf` — Noto Sans; package `@expo-google-fonts/noto-sans@0.4.2`; upstream: https://fonts.google.com/specimen/Noto+Sans; license: SIL Open Font License 1.1 (`game/theme/fonts/LICENSE_FONT_NOTO_SANS`); SHA-256: `fe8c022f48d8dd29f17b744d16f9346f4357e16f7d4f7be58b000ae7c291b614`.
