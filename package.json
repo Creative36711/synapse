@@ -9,6 +9,8 @@
     "node": ">=20.19.0"
   },
   "scripts": {
+    "check:font-stack": "godot --headless --path game --script res://theme/verify_font_stack.gd",
+    "render:font-sample": "godot --path game res://theme/render_locale.tscn",
     "check:contracts": "node tests/contracts/check-contracts.mjs",
     "test:contracts": "node --test tests/contracts/*.test.mjs",
     "test:validation": "node --test tests/validation/*.test.mjs",
