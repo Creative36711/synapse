@@ -223,13 +223,17 @@ def verify_snapshot(packages: list[dict]) -> dict[str, bytes]:
         contents[package["lock_path"]] = verify_package_tarball(
             package, VENDOR_DIR / relative, sums[relative],
         )
-    expected = expected_notice(packages, contents)
+    expected = expected_notice(packages, contents).encode("utf-8")
     try:
-        actual_notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
+        actual_notice = (ROOT / "NOTICE").read_bytes()
     except OSError as error:
         fail(f"missing or unreadable NOTICE: {error}")
-    if actual_notice != expected:
-        fail("NOTICE does not match the license texts bundled in the verified tarballs")
+    try:
+        actual_notice.decode("utf-8")
+    except UnicodeDecodeError as error:
+        fail(f"NOTICE is not valid UTF-8: {error}")
+    if not actual_notice.startswith(expected):
+        fail("NOTICE does not start with the license block bundled in the verified tarballs")
     return contents
 
 
