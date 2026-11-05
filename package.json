@@ -15,7 +15,8 @@
     "test:modules": "node --test tests/modules/*.test.mjs",
     "i18n-check": "node tools/i18n/check.mjs",
     "i18n-no-literals": "node tools/i18n/no-literals.mjs",
-    "test:i18n": "node --test tests/i18n/*.test.mjs"
+    "test:i18n": "node --test tests/i18n/*.test.mjs",
+    "test:deps": "python3 -B tests/deps/test_vendor.py"
   },
   "devDependencies": {
     "ajv": "8.20.0",
