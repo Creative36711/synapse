@@ -73,6 +73,14 @@ func _initialize() -> void:
 			quit(1)
 			return
 
+		var latin_family := FontStack.resolve_codepoint(locale, 0x41)
+		var cyrillic_family := FontStack.resolve_codepoint(locale, 0x416)
+		if latin_family != "Noto Sans" or cyrillic_family != "Noto Sans":
+			_report_error("font.stack.base_glyph.routed_wrong", {"locale": locale, "latin": latin_family, "cyrillic": cyrillic_family})
+			quit(1)
+			return
+		_emit_record("font.stack.base_glyph.route", {"locale": locale, "codepoints": [0x41, 0x416], "family": "Noto Sans"})
+
 		if FontStack.PREFERRED_GLYPH_BY_LOCALE.has(locale):
 			var preferred_family := String(FontStack.PREFERRED_CJK_BY_LOCALE[locale])
 			var preferred_codepoint := int(FontStack.PREFERRED_GLYPH_BY_LOCALE[locale])
@@ -82,10 +90,6 @@ func _initialize() -> void:
 				quit(1)
 				return
 			_emit_record("font.stack.locale_glyph.route", {"locale": locale, "codepoint": preferred_codepoint, "family": actual_family})
-		elif FontStack.resolve_codepoint(locale, 0x41) != "Noto Sans":
-			_report_error("font.stack.latin.routed_wrong", {"locale": locale})
-			quit(1)
-			return
 
 		_emit_record("font.stack.configured", {"locale": locale, "theme_db": fallback_font.get_font_name(), "fallbacks": actual_fallbacks})
 
