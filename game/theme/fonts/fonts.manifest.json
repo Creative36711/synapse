@@ -1,0 +1,47 @@
+{
+  "manifest_version": 1,
+  "license": "SIL Open Font License 1.1",
+  "license_file": "LICENSE_FONT",
+  "total_size_bytes": 22482076,
+  "fonts": [
+    {
+      "family": "Noto Sans JP",
+      "package": "@expo-google-fonts/noto-sans-jp",
+      "package_version": "0.4.4",
+      "file": "NotoSansJP_400Regular.ttf",
+      "upstream_url": "https://fonts.google.com/specimen/Noto+Sans+JP",
+      "package_url": "https://registry.npmjs.org/@expo-google-fonts/noto-sans-jp/-/noto-sans-jp-0.4.4.tgz",
+      "npm_integrity": "sha512-1vl2U7uYG5JAXGERZaLMXtfOSgyOU4Qhq30OOPrbAHjOu8AW9Pral/qN9Anta9fjd6eVRTijiNqcgy2TowzrDA==",
+      "size_bytes": 5731428,
+      "sha256": "6255ea4692e97ef27330304fb96fd650f9111f868cd585fcf2802d42823930e5",
+      "glyph_count": 16732,
+      "reserved_font_name": "Source"
+    },
+    {
+      "family": "Noto Sans KR",
+      "package": "@expo-google-fonts/noto-sans-kr",
+      "package_version": "0.4.4",
+      "file": "NotoSansKR_400Regular.ttf",
+      "upstream_url": "https://fonts.google.com/specimen/Noto+Sans+KR",
+      "package_url": "https://registry.npmjs.org/@expo-google-fonts/noto-sans-kr/-/noto-sans-kr-0.4.4.tgz",
+      "npm_integrity": "sha512-zePBzeh74ja/0Jiw3T/9+V6Ie3+eONlIl5o1dQQYsOCmfXjJttMz0rGv1oB2AWlzX/TPiL7J3IP3M9Ga7CBvWA==",
+      "size_bytes": 6191364,
+      "sha256": "b4a747e78805bc25b610dcfc3003cb5fb2e2ec034763774b24216ed15889eef4",
+      "glyph_count": 23174,
+      "reserved_font_name": "Source"
+    },
+    {
+      "family": "Noto Sans SC",
+      "package": "@expo-google-fonts/noto-sans-sc",
+      "package_version": "0.4.4",
+      "file": "NotoSansSC_400Regular.ttf",
+      "upstream_url": "https://fonts.google.com/specimen/Noto+Sans+SC",
+      "package_url": "https://registry.npmjs.org/@expo-google-fonts/noto-sans-sc/-/noto-sans-sc-0.4.4.tgz",
+      "npm_integrity": "sha512-LF4+p6xdtgUArufW0K+l9/FeDiXrW8FcEkEbOPIUC5ZnPupeFVA6yY9qCZ0sBrdAeLdlusDhv0R7q2x3onXo3w==",
+      "size_bytes": 10559284,
+      "sha256": "d45f67f0a7c0ca3f256950777ce6a61cc7ce5f9696d02900cbbaac25f8aa7d16",
+      "glyph_count": 30890,
+      "reserved_font_name": "Source"
+    }
+  ]
+}
