@@ -128,3 +128,8 @@ K-2 фиксирует контракты до реализации валида
 - [`../contracts/README.md`](../contracts/README.md) — границы K-2/K-3/K-4 и правила проверки
 - [`../contracts/gamespec.md`](../contracts/gamespec.md), [`../contracts/module-manifest.md`](../contracts/module-manifest.md)
 - [`../contracts/errors.md`](../contracts/errors.md), [`../contracts/localization.md`](../contracts/localization.md)
+
+## Обратимое решение: CJK fonts for O-13 (K-29, D-016 variant C)
+- **Неясно:** как закрепить проверяемую офлайн-доставку семейств Noto Sans JP/KR/SC без новых runtime-зависимостей и без подмены исходных файлов шрифтов.
+- **Решил:** добавить неизменённые `@expo-google-fonts/noto-sans-jp`, `noto-sans-kr`, `noto-sans-sc` версии `0.4.4` (SIL OFL 1.1) в `game/theme/fonts/`, с `fonts.manifest.json`, полным `LICENSE_FONT` и append-only NOTICE; точные размеры, cmap glyph counts и SHA-256 зафиксированы в манифесте.
+- **Откат:** удалить только три перечисленных TTF, `LICENSE_FONT`, `fonts.manifest.json`, эту запись и добавленный в конец NOTICE раздел о CJK; остальные строки NOTICE и существующие манифесты/хэши оставить без изменений.

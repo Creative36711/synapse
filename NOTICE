@@ -2748,3 +2748,11 @@ Apache License
 ## External tools fetched on demand (not bundled here)
 
 These are separate development tools, not part of the Synapse core license or the repository's redistributable binaries. Their setup scripts fetch them from PyPI or use a system installation; version and license conditions must be checked for the exact distribution used. At inventory time (2026-11-03), PyPI metadata reported Pillow 13.0.0 with license expression `MIT-CMU`; `tools/media/setup.sh` does not pin Pillow. `tools/modeling/setup_bpy.sh` defaults to `bpy` 4.5.3 (overridable with `SYNAPSE_BPY_VERSION`); PyPI metadata reports `GPL-3.0`, and pip resolves its additional dependencies dynamically. The media tool may use a system-provided ImageMagick `convert` as a fallback; it is not included or version-pinned by this repository.
+
+## CJK font assets (SIL Open Font License 1.1)
+
+The following unmodified regular-weight font files are from the listed `@expo-google-fonts` packages (version 0.4.4). The font files are licensed under the SIL Open Font License 1.1; the complete font license text is in `game/theme/fonts/LICENSE_FONT`. The upstream license retains Reserved Font Name `Source`; the upstream font filenames have not been changed.
+
+- `game/theme/fonts/NotoSansJP_400Regular.ttf` — Noto Sans JP; package `@expo-google-fonts/noto-sans-jp@0.4.4`; upstream: https://fonts.google.com/specimen/Noto+Sans+JP; SHA-256: `6255ea4692e97ef27330304fb96fd650f9111f868cd585fcf2802d42823930e5`.
+- `game/theme/fonts/NotoSansKR_400Regular.ttf` — Noto Sans KR; package `@expo-google-fonts/noto-sans-kr@0.4.4`; upstream: https://fonts.google.com/specimen/Noto+Sans+KR; SHA-256: `b4a747e78805bc25b610dcfc3003cb5fb2e2ec034763774b24216ed15889eef4`.
+- `game/theme/fonts/NotoSansSC_400Regular.ttf` — Noto Sans SC; package `@expo-google-fonts/noto-sans-sc@0.4.4`; upstream: https://fonts.google.com/specimen/Noto+Sans+SC; SHA-256: `d45f67f0a7c0ca3f256950777ce6a61cc7ce5f9696d02900cbbaac25f8aa7d16`.
