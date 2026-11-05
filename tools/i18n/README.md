@@ -22,6 +22,10 @@ catalog. The checker still reports every missing key, even when a non-English ca
   `error`/`debug`, and `process.stdout.write`/`process.stderr.write`. Translation calls and catalog
   lookups are allowed; diagnostic-code-shaped tokens are treated as machine identifiers, not prose.
   User-visible messages belong in catalogs, while diagnostic output remains code and parameters.
+- The public validator accepts `godot --headless --path game --script res://cli/main.gd -- validate <GameSpec> --locale <tag>`.
+  Validation messages and CLI usage come from the root diagnostic catalogs; unsupported tags fall
+  back to English. Localization changes only `message`, not diagnostic codes, parameters, ordering,
+  or the resolved game/module data. `resolve` remains locale-independent.
 - `npm run test:i18n` exercises runtime behavior and checker failures, including fixtures for UI
   property assignment, `set_text`, Godot and JavaScript CLI output, localized expressions, and
   comments. Each supported output family has negative probes that make the checker exit non-zero.

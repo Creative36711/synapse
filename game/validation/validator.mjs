@@ -8,11 +8,11 @@ import { fileURLToPath } from 'node:url';
 
 import Ajv2020 from 'ajv/dist/2020.js';
 import { parseDocument } from 'yaml';
+import { createI18n } from '../i18n/index.mjs';
 import { resolveGameSpec } from '../modules/resolver.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCHEMA_PATH = join(REPO_ROOT, 'schema/gamespec.schema.json');
-const ERROR_CATALOG_PATH = join(dirname(fileURLToPath(import.meta.url)), 'catalogs/en.json');
 const ESCAPE_POINTER = (part) => String(part).replace(/~/g, '~0').replace(/\//g, '~1');
 function atPointer(value, pointer) {
   if (!pointer || pointer === '/') return value;
@@ -50,24 +50,26 @@ function allowedFields(parentPath) {
   return fields[parentPath] ?? [];
 }
 
-function catalogMessage(catalog, code, params) {
-  const template = catalog[`errors.${code}`];
-  if (typeof template !== 'string') return undefined;
-  return template.replace(/\{([A-Za-z][A-Za-z0-9_]*)\}/g, (_match, key) => {
-    const value = params[key];
-    return value === undefined ? '' : typeof value === 'string' ? value : JSON.stringify(value);
-  });
-}
-
-function diagnostic(catalog, code, params) {
-  const item = {
+function diagnostic(code, params) {
+  return {
     code,
     params,
     catalogKey: `errors.${code}`,
   };
-  const message = catalogMessage(catalog, code, params);
-  if (message !== undefined) item.message = message;
-  return item;
+}
+
+function formatDiagnostic(entry, i18n) {
+  const params = entry.params ?? {};
+  const formatParams = Array.isArray(params.cycle)
+    ? { ...params, cycle: params.cycle.join(' -> ') }
+    : params;
+  const key = entry.catalogKey ?? `errors.${entry.code}`;
+  return { ...entry, message: i18n.t(key, formatParams) };
+}
+
+function formatResultDiagnostics(result, i18n) {
+  if (!Array.isArray(result.errors)) return result;
+  return { ...result, errors: result.errors.map((entry) => formatDiagnostic(entry, i18n)) };
 }
 
 function parserError(error, duplicate, source) {
@@ -83,7 +85,7 @@ function parserError(error, duplicate, source) {
     column: position.col,
   };
   if (duplicate) params.key = keyMatch?.[1]?.trim() ?? 'unknown';
-  return { code, params };
+  return diagnostic(code, params);
 }
 
 function parseYaml(text) {
@@ -123,7 +125,7 @@ function forbiddenStateFields(value, basePath = '') {
   return violations;
 }
 
-function structuralErrors(value, validate, catalog) {
+function structuralErrors(value, validate) {
   if (validate(value)) return [];
   const errors = [];
   for (const error of validate.errors ?? []) {
@@ -165,18 +167,18 @@ function structuralErrors(value, validate, catalog) {
         expected = error.keyword;
     }
 
-    errors.push(diagnostic(catalog, code, { path, expected, actual }));
+    errors.push(diagnostic(code, { path, expected, actual }));
   }
   return errors;
 }
 
-function semanticErrors(value, specPath, catalog) {
+function semanticErrors(value, specPath) {
   const errors = [];
   const localeSpec = value.locales ?? { default: 'en', supported: ['en'] };
   const supported = [...localeSpec.supported];
 
   if (!supported.includes(localeSpec.default)) {
-    errors.push(diagnostic(catalog, 'field.enum', {
+    errors.push(diagnostic('field.enum', {
       path: '/locales/default',
       expected: supported,
       actual: localeSpec.default,
@@ -187,7 +189,7 @@ function semanticErrors(value, specPath, catalog) {
   for (const [index, moduleRef] of (value.modules ?? []).entries()) {
     const firstIndex = moduleIndexes.get(moduleRef.id);
     if (firstIndex !== undefined) {
-      errors.push(diagnostic(catalog, 'module.duplicate', {
+      errors.push(diagnostic('module.duplicate', {
         path: `/modules/${index}/id`,
         expected: 'unique',
         actual: moduleRef.id,
@@ -214,7 +216,7 @@ function semanticErrors(value, specPath, catalog) {
 
     for (const [path, key] of translationKeys) {
       if (!Object.hasOwn(localeCatalog, key)) {
-        errors.push(diagnostic(catalog, 'locale.key.missing', {
+        errors.push(diagnostic('locale.key.missing', {
           path,
           expected: key,
           actual: 'missing',
@@ -228,17 +230,11 @@ function semanticErrors(value, specPath, catalog) {
   return errors;
 }
 
-function runValidation(inputPath) {
+function runValidation(inputPath, i18n) {
   const specPath = isAbsolute(inputPath) ? inputPath : resolve(process.cwd(), inputPath);
   const source = readFileSync(specPath, 'utf8');
-  const catalog = JSON.parse(readFileSync(ERROR_CATALOG_PATH, 'utf8'));
   const parsed = parseYaml(source);
-  if (parsed.error) {
-    return {
-      ok: false,
-      errors: [diagnostic(catalog, parsed.error.code, parsed.error.params)],
-    };
-  }
+  if (parsed.error) return formatResultDiagnostics({ ok: false, errors: [parsed.error] }, i18n);
 
   const ajv = new Ajv2020({
     allErrors: true,
@@ -253,20 +249,19 @@ function runValidation(inputPath) {
   const stateViolations = forbiddenStateFields(parsed.value);
   const forbiddenPaths = new Set(stateViolations.map((entry) => entry.path));
   const stateErrors = stateViolations.map(({ path, field }) => diagnostic(
-    catalog,
     'definition.state.forbidden',
     { path, expected: 'absent', actual: field, field },
   ));
-  const shapeErrors = structuralErrors(parsed.value, validate, catalog).filter((entry) =>
+  const shapeErrors = structuralErrors(parsed.value, validate).filter((entry) =>
     !(entry.code === 'field.unknown' && forbiddenPaths.has(entry.params.path)));
   const errors = [...stateErrors, ...shapeErrors];
-  if (errors.length > 0) return { ok: false, errors };
+  if (errors.length > 0) return formatResultDiagnostics({ ok: false, errors }, i18n);
 
-  errors.push(...semanticErrors(parsed.value, specPath, catalog));
-  if (errors.length > 0) return { ok: false, errors };
+  errors.push(...semanticErrors(parsed.value, specPath));
+  if (errors.length > 0) return formatResultDiagnostics({ ok: false, errors }, i18n);
 
   const resolution = resolveGameSpec(parsed.value, specPath);
-  if (!resolution.ok) return resolution;
+  if (!resolution.ok) return formatResultDiagnostics(resolution, i18n);
 
   const locales = parsed.value.locales ?? { default: 'en', supported: ['en'] };
   return {
@@ -283,16 +278,34 @@ function runValidation(inputPath) {
   };
 }
 
+function parseArguments(args) {
+  const positionals = [];
+  let locale = 'en';
+  let missingLocale = false;
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] !== '--locale') {
+      positionals.push(args[index]);
+    } else if (!args[index + 1] || args[index + 1].startsWith('--')) {
+      missingLocale = true;
+    } else {
+      locale = args[index + 1];
+      index += 1;
+    }
+  }
+  return { positionals, locale, missingLocale };
+}
+
 function main(args) {
-  if (args.length !== 2 || args[0] !== 'validate') {
-    const catalog = JSON.parse(readFileSync(ERROR_CATALOG_PATH, 'utf8'));
-    process.stderr.write(`${catalog['errors.cli.usage']}\n`);
+  const { positionals, locale, missingLocale } = parseArguments(args);
+  const i18n = createI18n({ locale });
+  if (missingLocale || positionals.length !== 2 || positionals[0] !== 'validate') {
+    process.stderr.write(`${i18n.t('errors.cli.usage')}\n`);
     process.exitCode = 2;
     return;
   }
 
   try {
-    const result = runValidation(args[1]);
+    const result = runValidation(positionals[1], i18n);
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (!result.ok) process.exitCode = 1;
   } catch (error) {
