@@ -44,6 +44,23 @@ godot --headless --path game --quit                # parse/load check; GDScript 
 godot --path game --write-movie /tmp/m.png --fixed-fps 30 --quit-after 90   # deterministic frame dump
 ```
 
+### Public GameSpec CLI
+
+From the repository root, pass CLI arguments after Godot's `--` separator. The public entry point is
+`res://cli/main.gd`:
+
+```bash
+godot --headless --path game --script res://cli/main.gd -- <args>
+godot --headless --path game --script res://cli/main.gd -- validate examples/minimal.game.yaml --locale en
+godot --headless --path game --script res://cli/main.gd -- resolve examples/minimal.game.yaml
+godot --headless --path game --script res://cli/main.gd -- run examples/minimal.game.yaml --frames 120 --shot /tmp/synapse.png --locale en
+```
+
+The subcommands are `validate`, `resolve`, and `run`. `--locale <locale>` selects the diagnostic
+locale (default `en`) for validation, including validation performed by `run`. `run` requires a
+frame count (`--frames`, 1–3600) and an absolute PNG output path outside the repository (`--shot`).
+Implementation: `game/cli/main.gd`; regression coverage: `tests/cli/run.test.mjs`.
+
 Notes:
 * `--headless` = no rendering at all (fast; use for import, scripts, tests). Without it, offscreen mode renders.
 * Rendering on CPU is slow (a few to a few dozen FPS for simple 3D). Prefer the pause-and-step workflow
