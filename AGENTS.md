@@ -192,3 +192,27 @@ request maps to the contract locale `zh-Hans`; do not create a `zh_CN.json` cata
 Open and visually inspect every generated PNG for tofu/missing glyphs. `npm run check:font-stack`
 provides complementary configuration/cmap checks; it does not replace the required visual O-13
 inspection. See `docs/decisions/SYN-1.md`, `oracle_render_entry`.
+
+## 9. Frame-dependent world-state example (K-42)
+
+`examples/state-motion.game.yaml` is an additive CLI example for exercising `run --state` on a scene
+whose actual node state changes as frames are processed. It selects `scene.state-motion`, registered
+in `game/runtime/scene_registry.gd`; the `MotionMarker` node advances its x-position by a fixed amount
+per process frame. This is deterministic, uses no wall-clock time or randomness, and changes an
+ordinary `Node2D.position` captured by the existing `synapse.world-state.v1` fingerprint. In contrast,
+`examples/minimal.game.yaml` selects the intentionally static `scene.main-menu`, so its 60- and
+120-frame fingerprints may remain equal.
+
+Run with absolute outputs outside the repository:
+
+```bash
+godot --headless --path game --script res://cli/main.gd -- run examples/state-motion.game.yaml --frames 60 --shot /tmp/state-motion-60.png --lang en --state /tmp/state-motion-60.json
+godot --headless --path game --script res://cli/main.gd -- run examples/state-motion.game.yaml --frames 120 --shot /tmp/state-motion-120.png --lang en --state /tmp/state-motion-120.json
+godot --headless --path game --script res://cli/main.gd -- run examples/state-motion.game.yaml --frames 120 --shot /tmp/state-motion-de-120.png --lang de --state /tmp/state-motion-de-120.json
+```
+
+The 60- and 120-frame state JSON files should differ because `MotionMarker.position` changes; the
+English and German JSON files at the same frame count must remain byte-identical. No frame number,
+locale, clock, process/host value, or absolute path is added to the fingerprint. The relative `path`
+entries already present in the v1 node hierarchy identify scene nodes; output/repository paths remain
+excluded. These checks supplement, and do not alter, O-12 or INV-10.
