@@ -1,0 +1,12 @@
+# Deterministic animated scene used to prove frame-dependent world-state fingerprints.
+specVersion: "1.0"
+game:
+  id: "example.statemotion"
+  version: "0.1.0"
+  titleKey: "game.example_state_motion.title"
+locales:
+  default: "en"
+  supported:
+    - "en"
+entry:
+  scene: "scene.state-motion"

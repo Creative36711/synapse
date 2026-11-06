@@ -11,6 +11,7 @@ const GODOT = process.env.GODOT_BIN ?? 'godot';
 const GODOT_PATH = `${dirname(GODOT)}:${process.env.PATH ?? ''}`;
 const TEST_DIR = '/tmp/synapse-k33-cli-test';
 const STATE_TEST_DIR = '/tmp/synapse-k39-state-test';
+const STATE_MOTION_TEST_DIR = '/tmp/synapse-k42-state-motion-test';
 const SHOT_PATH = join(TEST_DIR, 'minimal.png');
 const SUPPORTED_LOCALES = ['en', 'ru', 'zh-Hans', 'ja', 'pt-BR', 'de', 'fr', 'ko'];
 
@@ -43,8 +44,27 @@ function assertCanonicalObjectKeys(value) {
 }
 
 function assertRelativeNodePaths(node) {
-  assert.ok(!node.path.startsWith('/'), `node path must be relative: ${node.path}`);
+  assert.ok(!node.path.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(node.path), `node path must be relative: ${node.path}`);
   for (const child of node.children) assertRelativeNodePaths(child);
+}
+
+function assertFingerprintOmitsRunMetadata(bytes, outputPaths) {
+  const serialized = bytes.toString('utf8');
+  assert.ok(serialized.endsWith('\n'));
+  assert.ok(!serialized.includes(REPO_ROOT), 'state must not contain an absolute repository path');
+  for (const outputPath of outputPaths) {
+    assert.ok(!serialized.includes(outputPath), `state must not contain output path ${outputPath}`);
+  }
+  assert.doesNotMatch(
+    serialized,
+    /"(?:locale|lang|frame|frames|frame_count|timestamp|time|pid|hostname|host|cwd)"\s*:/i,
+    'state must not contain locale or volatile run metadata',
+  );
+  assert.ok(!serialized.includes('"en"') && !serialized.includes('"de"'), 'state must not contain locale identifiers');
+  const document = JSON.parse(serialized);
+  assertCanonicalObjectKeys(document);
+  assertRelativeNodePaths(document.nodes);
+  return document;
 }
 
 test('run validates the GameSpec, processes 120 frames and produces deterministic PNG output', { timeout: 180_000 }, () => {
@@ -247,6 +267,76 @@ test('run --state reports missing values, invalid paths, and write failures dist
   assert.equal(machineRecord(writeFailure.stdout).code, 'cli.run.state.write_failed');
 });
 
+function runStateMotion(frameCount, locale, suffix) {
+  const shotPath = join(STATE_MOTION_TEST_DIR, `${suffix}.png`);
+  const statePath = join(STATE_MOTION_TEST_DIR, `${suffix}.json`);
+  const result = runCli([
+    'run', 'examples/state-motion.game.yaml', '--frames', String(frameCount), '--shot', shotPath,
+    '--lang', locale, '--state', statePath,
+  ]);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  const record = machineRecord(result.stdout);
+  assert.equal(record.code, 'cli.run.complete');
+  assert.equal(record.params.frames, frameCount);
+  assert.equal(record.params.scene, 'scene.state-motion');
+
+  const png = readFileSync(shotPath);
+  assert.deepEqual(png.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  assert.equal(png.readUInt32BE(16), 960);
+  assert.equal(png.readUInt32BE(20), 540);
+
+  const bytes = readFileSync(statePath);
+  const document = assertFingerprintOmitsRunMetadata(bytes, [shotPath, statePath]);
+  assert.equal(document.format, 'synapse.world-state.v1');
+  assert.equal(document.scene, 'scene.state-motion');
+  return { bytes, document, shotPath, statePath };
+}
+
+test('state-motion example changes captured node transform between 60 and 120 frames', { timeout: 180_000 }, () => {
+  rmSync(STATE_MOTION_TEST_DIR, { recursive: true, force: true });
+  mkdirSync(STATE_MOTION_TEST_DIR, { recursive: true });
+
+  const short = runStateMotion(60, 'en', 'en-60');
+  const long = runStateMotion(120, 'en', 'en-120');
+  const shortHash = createHash('sha256').update(short.bytes).digest('hex');
+  const longHash = createHash('sha256').update(long.bytes).digest('hex');
+  assert.notEqual(shortHash, longHash, '60 and 120 frame world states must differ');
+
+  const shortMarker = short.document.nodes.children.find((node) => node.path === 'MotionMarker');
+  const longMarker = long.document.nodes.children.find((node) => node.path === 'MotionMarker');
+  assert.ok(shortMarker, 'snapshot must contain MotionMarker');
+  assert.ok(longMarker, 'snapshot must contain MotionMarker');
+  assert.notDeepEqual(shortMarker.properties.position, longMarker.properties.position);
+  assert.ok(longMarker.properties.position[0] > shortMarker.properties.position[0]);
+  console.log(JSON.stringify({
+    code: 'test.world_state.frame_difference',
+    params: {
+      node: 'MotionMarker',
+      property: 'position',
+      at60: shortMarker.properties.position,
+      at120: longMarker.properties.position,
+      sha256_60: shortHash,
+      sha256_120: longHash,
+    },
+  }));
+});
+
+test('state-motion fingerprint is byte-identical for --lang en and --lang de at 120 frames', { timeout: 180_000 }, () => {
+  rmSync(STATE_MOTION_TEST_DIR, { recursive: true, force: true });
+  mkdirSync(STATE_MOTION_TEST_DIR, { recursive: true });
+
+  const english = runStateMotion(120, 'en', 'locale-en-120');
+  const german = runStateMotion(120, 'de', 'locale-de-120');
+  assert.deepEqual(english.bytes, german.bytes, 'locale must not alter state-motion snapshot bytes');
+  const englishHash = createHash('sha256').update(english.bytes).digest('hex');
+  const germanHash = createHash('sha256').update(german.bytes).digest('hex');
+  assert.equal(englishHash, germanHash);
+  console.log(JSON.stringify({
+    code: 'test.world_state.locale_invariant',
+    params: { frames: 120, sha256_en: englishHash, sha256_de: germanHash, byte_equal: true },
+  }));
+});
+
 test('unknown semantic scene returns a machine-readable path/expected/actual error', { timeout: 60_000 }, () => {
   const fixtureDir = join(TEST_DIR, 'unknown-scene');
   mkdirSync(join(fixtureDir, 'locales'), { recursive: true });
@@ -267,6 +357,6 @@ test('unknown semantic scene returns a machine-readable path/expected/actual err
   const diagnostic = machineRecord(result.stdout);
   assert.equal(diagnostic.code, 'scene.id.unknown');
   assert.equal(diagnostic.params.path, '/entry/scene');
-  assert.deepEqual(diagnostic.params.expected, ['scene.main-menu']);
+  assert.deepEqual(diagnostic.params.expected, ['scene.main-menu', 'scene.state-motion']);
   assert.equal(diagnostic.params.actual, 'scene.not-registered');
 });
