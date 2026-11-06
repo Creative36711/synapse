@@ -170,3 +170,25 @@ Typical use: write a model script (cube → materials → `bpy.ops.export_scene.
 | Textures/models fail to `load()` | Run `godot --headless --path <project> --import` after adding assets. |
 | Screenshot file "not found" right after `shot` | Some tool sandboxes sync files with a delay; wait a second and retry. |
 | `V-Sync mode Disabled is not available` warning | Harmless with SwiftShader. |
+
+## 8. Font sample render — O-13
+
+This is the documented render entry point for the visual font check required by O-13. It renders the
+`res://theme/render_locale.tscn` sample scene through the `render:font-sample` npm script in offscreen
+mode (do not add `--headless`, which disables rendering):
+
+```bash
+SYNAPSE_GODOT_MODE=offscreen \
+K30_LOCALE=ja \
+K30_OUTPUT=/tmp/font-sample-ja.png \
+npm run render:font-sample
+```
+
+The npm script runs `godot --path game res://theme/render_locale.tscn`. `K30_OUTPUT` must be an
+absolute PNG output path. Repeat the command for each supported locale: `ja`, `ko`, `zh-Hans`, and
+`en` (English is the control). Use a distinct output path for each PNG. `zh_CN` in the original
+request maps to the contract locale `zh-Hans`; do not create a `zh_CN.json` catalog.
+
+Open and visually inspect every generated PNG for tofu/missing glyphs. `npm run check:font-stack`
+provides complementary configuration/cmap checks; it does not replace the required visual O-13
+inspection. See `docs/decisions/SYN-1.md`, `oracle_render_entry`.
