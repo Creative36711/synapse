@@ -61,8 +61,15 @@ The subcommands are `validate`, `resolve`, and `run`. `--locale <locale>` select
 locale (default `en`) for validation, including validation performed by `run`; `--lang <locale>` is
 an exact alias with identical parsing, values, diagnostics, and return codes. The O-10 command above
 is expected to report `field.unknown` in Japanese with RC=1, not CLI usage with RC=2. `run` requires a
-frame count (`--frames`, 1–3600) and an absolute PNG output path outside the repository (`--shot`).
-Implementation: `game/cli/main.gd`; regression coverage: `tests/cli/run.test.mjs`.
+frame count (`--frames`, 1–3600) and an absolute PNG output path outside the repository (`--shot`). An optional
+`--state <absolute-json-path>` writes a canonical world-state fingerprint outside the repository. After a
+successful render, the registered scene is replayed headlessly for the same number of process frames; the
+snapshot records its node hierarchy and stable visual/layout properties, with object keys sorted. It omits
+locale, display text, frame count, timestamps, process/host details, and absolute paths. Invalid state paths
+report `cli.run.state.invalid` (RC=2); write failures report `cli.run.state.write_failed` (RC=1). Identical
+fingerprints at different frame counts are valid evidence that the captured world state did not change;
+the frame count is deliberately not fingerprint metadata. Implementation: `game/cli/main.gd`; regression
+coverage: `tests/cli/run.test.mjs`.
 
 Notes:
 * `--headless` = no rendering at all (fast; use for import, scripts, tests). Without it, offscreen mode renders.

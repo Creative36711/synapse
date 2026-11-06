@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -9,6 +10,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const GODOT = process.env.GODOT_BIN ?? 'godot';
 const GODOT_PATH = `${dirname(GODOT)}:${process.env.PATH ?? ''}`;
 const TEST_DIR = '/tmp/synapse-k33-cli-test';
+const STATE_TEST_DIR = '/tmp/synapse-k39-state-test';
 const SHOT_PATH = join(TEST_DIR, 'minimal.png');
 const SUPPORTED_LOCALES = ['en', 'ru', 'zh-Hans', 'ja', 'pt-BR', 'de', 'fr', 'ko'];
 
@@ -27,6 +29,22 @@ function machineRecord(stdout) {
   const line = stdout.split(/\r?\n/).find((item) => item.trim().startsWith('{'));
   assert.ok(line, `expected a machine-readable JSON record in stdout:\n${stdout}`);
   return JSON.parse(line);
+}
+
+function assertCanonicalObjectKeys(value) {
+  if (Array.isArray(value)) {
+    for (const item of value) assertCanonicalObjectKeys(item);
+    return;
+  }
+  if (value && typeof value === 'object') {
+    assert.deepEqual(Object.keys(value), Object.keys(value).sort(), 'object keys must be sorted canonically');
+    for (const item of Object.values(value)) assertCanonicalObjectKeys(item);
+  }
+}
+
+function assertRelativeNodePaths(node) {
+  assert.ok(!node.path.startsWith('/'), `node path must be relative: ${node.path}`);
+  for (const child of node.children) assertRelativeNodePaths(child);
 }
 
 test('run validates the GameSpec, processes 120 frames and produces deterministic PNG output', { timeout: 180_000 }, () => {
@@ -141,7 +159,92 @@ test('run still rejects an unknown option with cli.run.option.unknown and rc 2',
   assert.equal(result.status, 2, `${result.stdout}\n${result.stderr}`);
   const diagnostic = machineRecord(result.stdout);
   assert.equal(diagnostic.code, 'cli.run.option.unknown');
+  assert.deepEqual(diagnostic.params.expected, ['--frames', '--shot', '--state']);
   assert.equal(diagnostic.params.actual, '--nope');
+});
+
+test('run --state writes canonical locale-independent fingerprints and records the 60/120-frame comparison', { timeout: 180_000 }, () => {
+  rmSync(STATE_TEST_DIR, { recursive: true, force: true });
+  mkdirSync(STATE_TEST_DIR, { recursive: true });
+
+  const enShot = join(STATE_TEST_DIR, 'en-120.png');
+  const enState = join(STATE_TEST_DIR, 'en-120.json');
+  const deShot = join(STATE_TEST_DIR, 'de-120.png');
+  const deState = join(STATE_TEST_DIR, 'de-120.json');
+  const run120 = (locale, shot, state) => runCli([
+    'run', 'examples/minimal.game.yaml', '--frames', '120', '--shot', shot,
+    '--lang', locale, '--state', state,
+  ]);
+
+  const english = run120('en', enShot, enState);
+  assert.equal(english.status, 0, `${english.stdout}\n${english.stderr}`);
+  assert.equal(machineRecord(english.stdout).code, 'cli.run.complete');
+  const german = run120('de', deShot, deState);
+  assert.equal(german.status, 0, `${german.stdout}\n${german.stderr}`);
+  assert.equal(machineRecord(german.stdout).code, 'cli.run.complete');
+
+  const enBytes = readFileSync(enState);
+  const deBytes = readFileSync(deState);
+  assert.deepEqual(enBytes, deBytes, 'locale must not affect the world-state fingerprint');
+  assert.ok(readFileSync(enShot).length > 24, 'English PNG must be created');
+  assert.ok(readFileSync(deShot).length > 24, 'German PNG must be created');
+
+  const serialized = enBytes.toString('utf8');
+  assert.ok(serialized.endsWith('\n'));
+  const document = JSON.parse(serialized);
+  assert.equal(document.format, 'synapse.world-state.v1');
+  assert.equal(document.scene, 'scene.main-menu');
+  assert.deepEqual(document.nodes.properties.size, [960, 540]);
+  assertCanonicalObjectKeys(document);
+  assertRelativeNodePaths(document.nodes);
+  assert.ok(!serialized.includes(REPO_ROOT), 'state must not contain an absolute repository path');
+  assert.ok(!serialized.includes(enShot) && !serialized.includes(enState));
+  assert.doesNotMatch(serialized, /"(?:locale|lang|text|message|timestamp|time|pid|hostname|cwd|frames|frame_count)"/i);
+  assert.doesNotMatch(serialized, /\b(?:en|de)\b/i, 'state must not include locale identifiers or localized strings');
+
+  const shortShot = join(STATE_TEST_DIR, 'en-60.png');
+  const shortState = join(STATE_TEST_DIR, 'en-60.json');
+  const shortRun = runCli([
+    'run', 'examples/minimal.game.yaml', '--frames', '60', '--shot', shortShot,
+    '--lang', 'en', '--state', shortState,
+  ]);
+  assert.equal(shortRun.status, 0, `${shortRun.stdout}\n${shortRun.stderr}`);
+  assert.ok(readFileSync(shortShot).length > 24, '60-frame PNG must be created');
+  const shortHash = createHash('sha256').update(readFileSync(shortState)).digest('hex');
+  const longHash = createHash('sha256').update(enBytes).digest('hex');
+  const frameStateEqual = shortHash === longHash;
+  console.log(`K-39 60/120 state comparison: 60=${shortHash} 120=${longHash} equal=${frameStateEqual}`);
+  if (frameStateEqual) {
+    console.log('K-39 finding: the registered minimal scene has no state changes between frames 60 and 120; acceptance decision remains pending.');
+  }
+});
+
+test('run --state reports missing values, invalid paths, and write failures distinctly', () => {
+  rmSync(STATE_TEST_DIR, { recursive: true, force: true });
+  mkdirSync(STATE_TEST_DIR, { recursive: true });
+  const shot = join(STATE_TEST_DIR, 'validation.png');
+  const base = ['run', 'examples/minimal.game.yaml', '--frames', '1', '--shot', shot];
+
+  const missing = runCli([...base, '--state']);
+  assert.equal(missing.status, 2);
+  assert.equal(machineRecord(missing.stdout).code, 'cli.run.option.value_missing');
+
+  for (const path of [
+    '',
+    'relative-state.json',
+    join(REPO_ROOT, 'inside-state.json'),
+    join(STATE_TEST_DIR, 'wrong-extension.txt'),
+  ]) {
+    const invalid = runCli([...base, '--state', path]);
+    assert.equal(invalid.status, 2, `${path}: ${invalid.stdout}\n${invalid.stderr}`);
+    assert.equal(machineRecord(invalid.stdout).code, 'cli.run.state.invalid');
+  }
+
+  const writeTarget = join(STATE_TEST_DIR, 'not-a-file.json');
+  mkdirSync(writeTarget, { recursive: true });
+  const writeFailure = runCli([...base, '--state', writeTarget]);
+  assert.equal(writeFailure.status, 1, `${writeFailure.stdout}\n${writeFailure.stderr}`);
+  assert.equal(machineRecord(writeFailure.stdout).code, 'cli.run.state.write_failed');
 });
 
 test('unknown semantic scene returns a machine-readable path/expected/actual error', { timeout: 60_000 }, () => {
