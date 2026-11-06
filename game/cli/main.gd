@@ -14,7 +14,7 @@ func _initialize() -> void:
 	var locale_missing := false
 	var index := 0
 	while index < user_args.size():
-		if user_args[index] == "--locale":
+		if user_args[index] in ["--locale", "--lang"]:
 			if index + 1 < user_args.size() and not user_args[index + 1].begins_with("--"):
 				locale = user_args[index + 1]
 				index += 2

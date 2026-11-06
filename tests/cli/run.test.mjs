@@ -10,6 +10,7 @@ const GODOT = process.env.GODOT_BIN ?? 'godot';
 const GODOT_PATH = `${dirname(GODOT)}:${process.env.PATH ?? ''}`;
 const TEST_DIR = '/tmp/synapse-k33-cli-test';
 const SHOT_PATH = join(TEST_DIR, 'minimal.png');
+const SUPPORTED_LOCALES = ['en', 'ru', 'zh-Hans', 'ja', 'pt-BR', 'de', 'fr', 'ko'];
 
 function runCli(args) {
   return spawnSync(GODOT, [
@@ -70,6 +71,77 @@ test('validate and resolve remain machine-readable through the public Godot CLI'
   const resolutionRecord = machineRecord(resolution.stdout);
   assert.equal(resolutionRecord.ok, true);
   assert.deepEqual(resolutionRecord.order, []);
+});
+
+test('validate treats --lang as an exact --locale alias for every supported locale', { timeout: 120_000 }, () => {
+  const args = ['validate', 'examples/broken.game.yaml'];
+  const english = runCli([...args, '--locale', 'en']);
+  assert.equal(english.status, 1, `${english.stdout}\n${english.stderr}`);
+  const englishError = machineRecord(english.stdout).errors[0];
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const lang = runCli([...args, '--lang', locale]);
+    const localeOption = runCli([...args, '--locale', locale]);
+    assert.equal(lang.status, localeOption.status, `${locale}: status differs`);
+    assert.equal(lang.stdout, localeOption.stdout, `${locale}: stdout differs`);
+    assert.equal(lang.stderr, localeOption.stderr, `${locale}: stderr differs`);
+    assert.equal(lang.status, english.status, `${locale}: return code differs from en`);
+
+    const diagnostic = machineRecord(lang.stdout).errors[0];
+    assert.equal(diagnostic.code, englishError.code, `${locale}: error code differs from en`);
+    assert.equal(diagnostic.params.path, englishError.params.path, `${locale}: path differs from en`);
+    assert.equal(diagnostic.params.actual, englishError.params.actual, `${locale}: actual differs from en`);
+    assert.ok(diagnostic.message.trim(), `${locale}: localized message is empty`);
+    if (locale === 'ja') {
+      assert.notEqual(diagnostic.message, englishError.message, 'ja message must use the Japanese catalog');
+      assert.match(diagnostic.message, /[ぁ-んァ-ン一-龯]/u, 'ja message must contain Japanese text');
+    }
+  }
+
+  assert.equal(machineRecord(runCli([...args, '--lang', 'ja']).stdout).errors[0].code, 'field.unknown');
+  assert.equal(machineRecord(runCli([...args, '--lang', 'de']).stdout).errors[0].code, 'field.unknown');
+});
+
+test('run applies --lang with the same global locale selection as --locale', () => {
+  const args = ['run', 'examples/broken.game.yaml', '--frames', '1', '--shot', SHOT_PATH];
+  const lang = runCli([...args, '--lang', 'ja']);
+  const locale = runCli([...args, '--locale', 'ja']);
+  assert.equal(lang.status, locale.status);
+  assert.equal(lang.stdout, locale.stdout);
+  assert.equal(lang.stderr, locale.stderr);
+  assert.equal(lang.status, 1);
+  assert.equal(machineRecord(lang.stdout).errors[0].code, 'field.unknown');
+});
+
+test('missing and unsupported --lang values preserve --locale diagnostics and return codes', () => {
+  const args = ['validate', 'examples/broken.game.yaml'];
+  const missingLang = runCli([...args, '--lang']);
+  const missingLocale = runCli([...args, '--locale']);
+  assert.deepEqual(
+    { status: missingLang.status, stdout: missingLang.stdout, stderr: missingLang.stderr },
+    { status: missingLocale.status, stdout: missingLocale.stdout, stderr: missingLocale.stderr },
+  );
+  assert.equal(missingLang.status, 2);
+  assert.match(missingLang.stdout, /Usage:/);
+
+  const unsupportedLang = runCli([...args, '--lang', 'xx']);
+  const unsupportedLocale = runCli([...args, '--locale', 'xx']);
+  assert.deepEqual(
+    { status: unsupportedLang.status, stdout: unsupportedLang.stdout, stderr: unsupportedLang.stderr },
+    { status: unsupportedLocale.status, stdout: unsupportedLocale.stdout, stderr: unsupportedLocale.stderr },
+  );
+  assert.equal(unsupportedLang.status, 1);
+  assert.equal(machineRecord(unsupportedLang.stdout).errors[0].code, 'field.unknown');
+});
+
+test('run still rejects an unknown option with cli.run.option.unknown and rc 2', () => {
+  const result = runCli([
+    'run', 'examples/minimal.game.yaml', '--frames', '1', '--shot', SHOT_PATH, '--nope', 'value',
+  ]);
+  assert.equal(result.status, 2, `${result.stdout}\n${result.stderr}`);
+  const diagnostic = machineRecord(result.stdout);
+  assert.equal(diagnostic.code, 'cli.run.option.unknown');
+  assert.equal(diagnostic.params.actual, '--nope');
 });
 
 test('unknown semantic scene returns a machine-readable path/expected/actual error', { timeout: 60_000 }, () => {
