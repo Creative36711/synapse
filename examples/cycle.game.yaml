@@ -1,5 +1,7 @@
-# Static K-4 fixture only: modules synapse.demo.alpha -> synapse.demo.beta -> synapse.demo.alpha.
-# K-3 validates this GameSpec but does not resolve module manifests or claim to detect the cycle.
+# This fixture contains a module dependency cycle:
+# synapse.demo.alpha -> synapse.demo.beta -> synapse.demo.alpha.
+# validate and resolve both reject it with module.dependency.cycle (rc=1).
+# The diagnostic identifies /dependencies; params.actual and params.cycle carry the closed path.
 specVersion: "1.0"
 game:
   id: "example.cycle"
