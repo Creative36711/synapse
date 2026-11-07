@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.synapse.invalid/module-manifest/1.0",
-  "title": "Манифест модуля 1.0 (черновик K-2)",
+  "title": "Манифест модуля 1.0",
   "$comment": "Структурный контракт манифеста модуля ядра: версия, зависимости, конфликты, предоставляемые смысловые ID. Проверяется JSON Schema 2020-12. Разрешение версий, цикл зависимостей и конфликты как факт — K-4. Схема самодостаточна: внешних $ref нет, проверка работает офлайн (INV-1).",
   "type": "object",
   "additionalProperties": false,
@@ -62,6 +62,32 @@
         "scene.main-menu",
         "scene.platformer.level"
       ]
+    },
+    "sceneResource": {
+      "type": "string",
+      "pattern": "^res://(?!.*\\.\\.)[A-Za-z0-9_][A-Za-z0-9_./-]*\\.tscn$",
+      "description": "Путь к ресурсу сцены движка: только res://, только файл .tscn, без '..' и без абсолютных путей. Схема проверяет форму пути; наличие файла проверяет K-3 (scene.resource.missing) без сети и без импорта движка.",
+      "examples": [
+        "res://runtime/scenes/main_menu.tscn",
+        "res://modules/ui/pause_menu.tscn"
+      ]
+    },
+    "sceneEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Запись о сцене: смысловой ID и ресурс. Определение сцены, а не её экземпляр: состояния, узлов и ссылок на другие сцены здесь нет (INV-4).",
+      "required": [
+        "id",
+        "resource"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/sceneId"
+        },
+        "resource": {
+          "$ref": "#/$defs/sceneResource"
+        }
+      }
     },
     "translationKey": {
       "type": "string",
@@ -202,6 +228,15 @@
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/sceneId"
+          }
+        },
+        "sceneEntries": {
+          "type": "array",
+          "default": [],
+          "uniqueItems": true,
+          "description": "Законная связь смыслового ID сцены с ресурсом движка. Запись аддитивна к provides.scenes: id обязан быть объявлен в provides.scenes, а resource — путь res://…tscn без '..' и абсолютных путей. Существование файла и уникальность id между модулями — семантика K-3 (scene.resource.missing, scene.duplicate).",
+          "items": {
+            "$ref": "#/$defs/sceneEntry"
           }
         },
         "locales": {

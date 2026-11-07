@@ -50,6 +50,12 @@
 | `definition.state.forbidden` | semantic | K-3 | path, expected, actual, field | `errors.definition.state.forbidden` | попытка хранить состояние экземпляра |
 | `locale.key.missing` | semantic | K-3 | path, expected, actual, locale, catalog | `errors.locale.key.missing` | нет ключа каталога для локали |
 | `module.duplicate` | semantic | K-3 | path, expected, actual, moduleId | `errors.module.duplicate` | один ID модуля объявлен дважды |
+| `scene.entry.unknown` | semantic | K-3 | path, expected, actual, sceneId, moduleId | `errors.scene.entry.unknown` | запись `sceneEntries` не входит в `provides.scenes` |
+| `scene.duplicate` | semantic | K-3 | path, expected, actual, sceneId, modules | `errors.scene.duplicate` | один ID сцены сопоставлен ресурсу дважды |
+| `scene.resource.missing` | semantic | K-3 | path, expected, actual, sceneId, resource | `errors.scene.resource.missing` | ресурса `res://…tscn` из `sceneEntries` нет |
+| `spec.file.missing` | semantic | K-3 | path, expected, actual, file | `errors.spec.file.missing` | файл спецификации не читается |
+| `runtime.engine.missing` | semantic | K-3 | path, expected, actual, engine | `errors.runtime.engine.missing` | движок `run` недоступен |
+| `cli.dependency.node-missing` | semantic | K-3 | path, expected, actual, dependency, requiredVersion | `errors.cli.dependency.node-missing` | нет Node.js, проверка не выполнена |
 | `module.dependency.missing` | resolution | K-4 | path, expected, actual, requiredBy, constraint | `errors.module.dependency.missing` | обязательная зависимость не найдена |
 | `module.dependency.cycle` | resolution | K-4 | path, expected, actual, cycle | `errors.module.dependency.cycle` | цикл в графе зависимостей (INV-5) |
 | `module.version.unsatisfied` | resolution | K-4 | path, expected, actual, constraint, available | `errors.module.version.unsatisfied` | нет версии под диапазон |
@@ -63,12 +69,28 @@
 
 - **structural** — форма документа: поля, типы, шаблоны, повторы, разбор YAML. Реализовано в K-2
   (схемы + правила чтения).
-- **semantic** — смысл уже разобранного документа: существуют ли ключи каталога, согласованы ли
-  локали, нет ли состояния в определении. K-3.
+- **semantic** — то, что требует не только формы: существование файлов и ресурсов, смысл уже
+  разобранного документа, доступность окружения проверки. Сюда входят ключи каталога, согласованность
+  локалей, отсутствие состояния в определении, связь сцены с ресурсом (`scene.*`), читаемость файла
+  спецификации (`spec.file.missing`) и наличие того, чем выполняется проверка
+  (`runtime.engine.missing`, `cli.dependency.node-missing`). K-3.
 - **resolution** — граф модулей: версии, зависимости, конфликты, циклы, ссылки. K-4.
 
 `implementedIn` — карточка, где проверка появляется. Значение определяется стадией:
 `structural → K-2`, `semantic → K-3`, `resolution → K-4`.
+
+Стадии ровно три, и четвёртой контракт не вводит: отсутствие движка или Node.js — не «стадия
+рантайма», а предусловие проверки, поэтому такие коды живут в `semantic`. Если появится отдельная
+стадия `runtime`, меняется только поле `stage` (и вместе с ним `implementedIn`) — один код, одна
+строка, см. [`../decisions/SYN-2.md`](../decisions/SYN-2.md).
+
+## Тексты новых кодов
+
+`catalogKey` новых кодов выводится из кода (`errors.scene.entry.unknown` и т. д.), но строки в
+каталогах `locales/<locale>.json` для них ещё не добавлены: восемь каталогов ведёт карточка
+локализации, и дописывать их из контрактной карточки нельзя. До появления текстов диагностика такого
+кода рендерится штатным `locale.key.missing`, а сам код и `params` остаются верными. Это известный
+долг, а не разрешение писать текст в контракт (INV-9, INV-14).
 
 ## Как добавить код
 

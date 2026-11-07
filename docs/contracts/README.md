@@ -3,10 +3,10 @@
 Проверяемые контракты описания игры и модуля: **GameSpec**, **манифест модуля**, **реестр кодов
 ошибок**. Здесь только сами контракты и их проверка — валидатора, резолвера и рантайма в K-2 нет.
 
-**Статус:** черновик. Формат первичной фиксации (YAML) — открытый вопрос приёмки, см.
-[`../decisions/SYN-1.md`](../decisions/SYN-1.md). До фактического ответа действует YAML-черновик;
-вариант по умолчанию не считается принятием. Грамматики полей, коды ошибок и `params` от выбора
-формата не зависят: при смене формата меняется сериализация, а не смысл контракта.
+**Статус: формат принят** (2026-11-05, [`../decisions/SYN-1.md`](../decisions/SYN-1.md)):
+описания — YAML 1.2 core schema, структурные схемы — JSON Schema 2020-12, ошибка — `code` +
+`params(path, expected, actual)` с текстом из каталога. «Черновик формата» больше не действует:
+схемы ниже — действующий контракт, а не предложение.
 
 ## Что лежит в этой папке
 
@@ -15,6 +15,7 @@
 | `docs/contracts/README.md` | эта страница: границы, правила, как проверять |
 | `docs/contracts/gamespec.md` | контракт GameSpec: поля, примеры, ошибки |
 | `docs/contracts/module-manifest.md` | контракт манифеста модуля: версия, зависимости, конфликты |
+| `docs/contracts/scene-binding.md` | для автора: как объявить сцену и сущность, что увидит `run`, что значит каждая ошибка |
 | `docs/contracts/errors.md` | контракт ошибки: `code` + `params`, реестр кодов, ключи каталога |
 | `docs/contracts/localization.md` | локали, ключи каталога, почему текст не живёт в контракте |
 | `schema/gamespec.schema.json` | JSON Schema 2020-12 для GameSpec |
@@ -22,6 +23,7 @@
 | `schema/error-registry.json` | реестр кодов ошибок (машинный) |
 | `schema/error-registry.schema.json` | JSON Schema 2020-12 для самого реестра |
 | `schema/examples/<контракт>/` | валидные и невалидные примеры + `cases.json` |
+| `schema/examples/scene-binding/` | фикстуры семантических правил связи сцен и сущностей (`scene.*`, `spec.file.missing`, `runtime.engine.missing`, `cli.dependency.node-missing`) |
 | `tests/contracts/` | проверка контрактов (Node, `node --test`) |
 | `tests/contracts/lib/contracts.mjs` | эталонное чтение YAML и помощники проверки |
 
@@ -74,6 +76,8 @@
 | Чтение YAML с запретом повторов ключей | **эталон в `tests/contracts/lib`** | переносит в CLI | использует |
 | Ключи каталога существуют для локали | нет | **да** (`locale.key.missing`) | — |
 | `default` входит в `supported`, смысловые ID сцен существуют | нет | **да** | — |
+| Ресурс сцены существует, ID сцены не дублируется, файл спецификации читается | нет | **да** (`scene.*`, `spec.file.missing`) | — |
+| Связь `sceneEntries` с `provides.scenes` | форма записи | **да** (`scene.entry.unknown`) | использует |
 | Граф зависимостей, версии, конфликты, цикл | нет | нет | **да** |
 | Рантайм, загрузка сцен | нет | нет | — (K-5) |
 
@@ -103,6 +107,24 @@
 
 Подробности и полный реестр — [`errors.md`](errors.md).
 
+## Новые коды и что именно проверено
+
+Связь сцены с ресурсом и определения сущностей добавлены контрактом (карточка S-1,
+[`../decisions/SYN-2.md`](../decisions/SYN-2.md)). Честно про охват проверки:
+
+- **Структурная часть** (`provides.sceneEntries`, `entities`) проверяется исполняемым оракулом:
+  `schema/examples/**/cases.json` дают валидные и невалидные примеры, `check:contracts` сверяет код и
+  путь ошибки.
+- **Семантические коды** (`scene.entry.unknown`, `scene.duplicate`, `scene.resource.missing`,
+  `spec.file.missing`, `runtime.engine.missing`, `cli.dependency.node-missing`) схема проверить не
+  может: нужны файловая система, сборка модулей и окружение. Их эталонные фикстуры лежат в
+  `schema/examples/scene-binding/`, но оракул `check:contracts` исполняет только наборы `CASE_SETS`
+  и стадии `schema`/`parse`, поэтому эти фикстуры **не** выдаются за пройденную проверку: их
+  исполняет валидатор K-3.
+- **Тексты новых кодов** пока не добавлены в `locales/<locale>.json`: восемь каталогов ведёт карточка
+  локализации. До появления строк диагностика рендерится штатным `locale.key.missing`; код и `params`
+  от этого не меняются (INV-9, INV-14).
+
 ## Как проверить
 
 ```bash
@@ -131,9 +153,9 @@ node --test tests/contracts/*.test.mjs
 
 | Инвариант | Где виден в K-2 |
 |---|---|
-| INV-1: проверка локальна, без сети/cortex/секретов | схемы без внешних `$ref`, `$id` в `.invalid`, только devDependencies из lockfile |
+| INV-1: проверка локальна, без сети, закрытых контуров и секретов | схемы без внешних `$ref`, `$id` в `.invalid`, только devDependencies из lockfile |
 | INV-2: контракт — единственный источник имён полей | схемы и таблицы полей в `gamespec.md` / `module-manifest.md` |
-| INV-3: логика по смысловым ID, не по путям ассетов | `gameId`, `moduleId`, `sceneId`, `entry.scene`, `provides.scenes` |
+| INV-3: логика по смысловым ID, не по путям ассетов | `gameId`, `moduleId`, `entityId`, `sceneId`, `entry.scene`, `provides.scenes`; путь к ресурсу живёт только в `provides.sceneEntries[].resource` |
 | INV-4: определения без изменяемого состояния | `additionalProperties: false` во всех объектах, запрет `state`/`runtime`/`save` |
 | INV-5: цикл зависимостей — ошибка | код `module.dependency.cycle`, `extraParams.cycle`, реализация K-4 |
 | INV-6: ошибка называет path/expected/actual | базовые `params` у каждого кода, проверяется тестом |

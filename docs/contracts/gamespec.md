@@ -1,4 +1,4 @@
-# GameSpec 1.0 (черновик)
+# GameSpec 1.0
 
 Описание игры: кто она, какая версия, с какой сцены начинается, какие модули подключает и какие
 локали поставляет. Машинная схема — [`schema/gamespec.schema.json`](../../schema/gamespec.schema.json)
@@ -42,6 +42,13 @@ modules:
 locales:
   default: "en"
   supported: ["en", "ru", "de"]
+entities:
+  - id: "entity.garden.player"
+    properties:
+      max_health: 100
+      walk_speed: 3.5
+      can_dash: false
+      nameKey: "game.synapse_demo_garden.entity_player.name"
 ```
 
 ## Поля
@@ -63,6 +70,9 @@ locales:
 | `locales` | object | нет | набор локалей игры | `field.type` |
 | `locales.default` | string | да (если есть `locales`) | локаль из набора §9, по умолчанию `en` | `field.enum` |
 | `locales.supported` | array | да (если есть `locales`) | непустой список локалей без повторов | `field.enum`, `field.unique` |
+| `entities` | array | нет | определения сущностей, по умолчанию `[]` | `field.type` |
+| `entities[].id` | string | да | смысловой ID сущности с префиксом `entity.` | `field.pattern` |
+| `entities[].properties` | object | да | свойства экземпляра, только примитивы | `field.type` |
 
 Любое поле вне таблицы — `field.unknown`: контракт не расширяется на месте.
 
@@ -77,12 +87,31 @@ locales:
 | ID игры | `^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*){1,4}$` | `example.minimal`, `synapse.demo.garden` | `Example Minimal`, `game` |
 | ID модуля | `^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*){2,5}$` | `synapse.core.ui` | `synapse`, `Synapse.Core.UI` |
 | ID сцены | `^scene(\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$` | `scene.main-menu`, `scene.garden.title-screen` | `main-menu`, `res://levels/menu.tscn` |
+| ID сущности | `^entity(\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$` | `entity.player`, `entity.ui.hud` | `player`, `res://actors/player.tscn` |
 | Ключ каталога | `^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$` | `game.example_minimal.title` | `Заголовок игры`, `game..title` |
 | Версия | SemVer 2.0.0 | `0.1.0`, `1.2.3-rc.1` | `0.1`, `v1.2.3` |
 
 Границы смысловых ID — часть контракта: `scene.` в `entry.scene` гарантирует, что автор не вставит
 сюда путь к ассету, а `provides.scenes` модуля отвечает тем же словарём (см.
 [`module-manifest.md`](module-manifest.md)).
+
+## `entities`: определение, а не экземпляр
+
+`entities` описывает, **что** существует в игре и с какими начальными свойствами создаётся
+экземпляр. Это часть описания игры, а не сейв и не рантайм-состояние:
+
+- `id` — смысловой ID сущности по грамматике смысловых ID с префиксом `entity.` (INV-3): имя файла,
+  узла или ассета сюда не пишется;
+- `properties` — только примитивы: строка, число, булево, `null`. Вложенный объект или массив —
+  `field.type`: это уже структура изменяемого состояния;
+- полей `state`, `save`, `runtime` нет и не будет — определение неизменяемо (INV-4). Экземпляр
+  создаётся из определения, а его изменяемые значения живут в рантайме и сейвах;
+- пользовательский текст свойством не хранится: видимое игроку имя — ключ каталога (INV-9), см.
+  [`localization.md`](localization.md). Ключ каталога описывает текст, а не состояние экземпляра:
+  состояние в ключах не дублируется.
+
+Пример выше показывает оба случая: числа и булево — данные, `nameKey` — ключ каталога, а не строка
+интерфейса.
 
 ## Чего в GameSpec принципиально нет
 
@@ -134,7 +163,8 @@ entry:
 
 **K-3 (семантика, следующая карточка):** что `locales.default` входит в `supported`; что ключи
 `titleKey`/`descriptionKey` существуют для каждой объявленной локали (`locale.key.missing`); что
-`entry.scene` непустой по смыслу.
+`entry.scene` непустой по смыслу; что ресурсы сцен из манифестов существуют и не дублируются
+(`scene.resource.missing`, `scene.duplicate`).
 
 **K-4 (резолвинг):** что `modules[].id` разрешается в доступный модуль, версии удовлетворяют
 диапазонам, граф без циклов, `entry.scene` предоставлена одним из подключённых модулей

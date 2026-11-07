@@ -1,0 +1,15 @@
+# Определения сущностей: смысловой ID и примитивные свойства, без состояния экземпляра.
+specVersion: "1.0"
+game:
+  id: "example.minimal"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.main-menu"
+entities:
+  - id: "entity.player"
+    properties:
+      max_health: 100
+      walk_speed: 3.5
+      can_dash: false
+      nameKey: "game.example_minimal.entity_player.name"

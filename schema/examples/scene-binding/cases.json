@@ -1,0 +1,64 @@
+{
+  "$comment": "Семантические правила связи сцен и сущностей. Набор не входит в CASE_SETS оракула check:contracts: структурные схемы такие правила не проверяют, а исполняемая проверка стадии K-3 (валидатор) — отдельная карточка. Файлы здесь — эталонные фикстуры: структурно валидный ввод, который обязан ловить валидатор со своим кодом.",
+  "schema": "../../module-manifest.schema.json",
+  "codes": [
+    {
+      "code": "scene.entry.unknown",
+      "valid": "valid/module-scene-entries.module.yaml",
+      "invalid": "invalid/scene-entry-unknown.module.yaml",
+      "rule": "Каждый id из provides.sceneEntries объявлен в provides.scenes этого модуля.",
+      "expected": "code=scene.entry.unknown, params.path=/provides/sceneEntries/0/id, extraParams.sceneId=scene.pause-menu"
+    },
+    {
+      "code": "scene.duplicate",
+      "valid": "valid/module-scene-entries.module.yaml",
+      "invalid": "invalid/scene-duplicate-a.module.yaml",
+      "invalidWith": "invalid/scene-duplicate-b.module.yaml",
+      "rule": "Один смысловой ID сцены сопоставлен ресурсу один раз на всю сборку.",
+      "expected": "code=scene.duplicate, params.path=/provides/sceneEntries, extraParams.sceneId=scene.main-menu"
+    },
+    {
+      "code": "scene.resource.missing",
+      "valid": "valid/module-scene-entries.module.yaml",
+      "invalid": "invalid/scene-resource-missing.module.yaml",
+      "rule": "Ресурс res://…tscn из sceneEntries существует; проверка файловая, без сети и без импорта движка.",
+      "expected": "code=scene.resource.missing, params.path=/provides/sceneEntries/0/resource, extraParams.resource=res://runtime/scenes/tutorial.tscn"
+    },
+    {
+      "code": "spec.file.missing",
+      "valid": "valid/gamespec-entities.game.yaml",
+      "invalid": {
+        "invocation": "validate /tmp/synapse-absent/absent.game.yaml",
+        "precondition": "файла по пути нет",
+        "expected": "code=spec.file.missing, rc=1"
+      },
+      "rule": "CLI проверяет читаемость файла спецификации до разбора; отсутствие файла — ошибка с кодом, а не пустой отчёт."
+    },
+    {
+      "code": "runtime.engine.missing",
+      "valid": {
+        "invocation": "run examples/minimal.game.yaml --frames 1 --shot /tmp/out.png",
+        "precondition": "godot 4.7.2 доступен в PATH"
+      },
+      "invalid": {
+        "invocation": "тот же run",
+        "precondition": "godot отсутствует в PATH",
+        "expected": "code=runtime.engine.missing, rc=1, PNG не создан"
+      },
+      "rule": "Отсутствие движка — диагностика с кодом, а не стектрейс и не «тихий» успех."
+    },
+    {
+      "code": "cli.dependency.node-missing",
+      "valid": {
+        "invocation": "validate examples/minimal.game.yaml",
+        "precondition": "node >= 20.19.0 доступен в PATH"
+      },
+      "invalid": {
+        "invocation": "validate examples/minimal.game.yaml",
+        "precondition": "node отсутствует в PATH",
+        "expected": "code=cli.dependency.node-missing, rc=1"
+      },
+      "rule": "Проверка, которая не смогла выполниться, сообщает об этом кодом: пропуск не равен pass."
+    }
+  ]
+}

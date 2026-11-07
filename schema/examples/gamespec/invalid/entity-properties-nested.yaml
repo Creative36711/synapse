@@ -1,0 +1,12 @@
+specVersion: "1.0"
+game:
+  id: "example.minimal"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.main-menu"
+entities:
+  - id: "entity.player"
+    properties:
+      max_health: 100
+      inventory: ["sword"]

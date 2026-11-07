@@ -1,7 +1,10 @@
 {
   "$comment": "Контрактные примеры GameSpec: что обязано проходить, что обязано падать и с каким кодом/путём.",
   "schema": "../../gamespec.schema.json",
-  "valid": ["minimal.valid.yaml", "full.valid.yaml"],
+  "valid": [
+    "minimal.valid.yaml",
+    "full.valid.yaml"
+  ],
   "invalid": [
     {
       "file": "invalid/unknown-field.yaml",
@@ -54,6 +57,36 @@
       "file": "invalid/syntax.yaml",
       "phase": "parse",
       "code": "yaml.syntax"
+    },
+    {
+      "file": "invalid/entity-mutable-state.yaml",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/entities/0/state"
+    },
+    {
+      "file": "invalid/entity-properties-nested.yaml",
+      "code": "field.type",
+      "keyword": "type",
+      "path": "/entities/0/properties/inventory"
+    },
+    {
+      "file": "invalid/entity-bad-id.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/entities/0/id"
+    },
+    {
+      "file": "invalid/entity-missing-properties.yaml",
+      "code": "field.required",
+      "keyword": "required",
+      "path": "/entities/0/properties"
+    },
+    {
+      "file": "invalid/entities-wrong-type.yaml",
+      "code": "field.type",
+      "keyword": "type",
+      "path": "/entities"
     }
   ]
 }
