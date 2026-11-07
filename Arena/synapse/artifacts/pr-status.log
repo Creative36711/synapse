@@ -1,0 +1,5 @@
+Command: gh pr view 25 --json url,state,isDraft,headRefOid,baseRefName,title
+{"baseRefName":"main","headRefOid":"3ecd27661c46cc09fcae7fdf5ad949eb6f82d992","isDraft":true,"state":"OPEN","title":"[SYN-2 S-3] Manifest-backed scenes and entity instances","url":"https://github.com/Creative36711/synapse/pull/25"}
+Command: gh pr checks 25 --watch --interval 10
+Result: i18n pass on PR head 3ecd27661c46cc09fcae7fdf5ad949eb6f82d992; command rc=0.
+No other GitHub checks were reported.

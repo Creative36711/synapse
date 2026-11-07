@@ -12,6 +12,7 @@ minimal-validate	0	Godot public CLI
 minimal-resolve	0	Godot public CLI
 minimal-run	0	Godot public CLI, frames=1
 godot-editor-import	0	Godot 4.7.2 headless editor
+github-i18n-check	0	PR #25 head 3ecd27661c46cc09fcae7fdf5ad949eb6f82d992
 node-check	0	6 files
 diff-check	0	clean
 d022-search	1	Expected grep no-match (no cortex link/dependency)

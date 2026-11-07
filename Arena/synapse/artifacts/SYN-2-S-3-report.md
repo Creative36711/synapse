@@ -30,6 +30,8 @@
 | `git diff --check` | rc=0 |
 | Публичные Godot CLI `validate`, `resolve`, `run` для `examples/minimal.game.yaml` | все rc=0; `run` обработал 1 кадр |
 
+GitHub PR check: i18n workflow passed on PR head `3ecd27661c46cc09fcae7fdf5ad949eb6f82d992`; no other remote checks were reported. `pr-status.log` contains the command and result.
+
 PNG smoke-test: `minimal.png`, 960×540, SHA-256 `d26499b79fd2daea08c90a6c0d5d08441260078fa96d0445aaece2352aeacbca`. Изображение открыто и визуально проверено: тёмный минималистичный экран меню с бирюзовым квадратным значком, горизонтальными полосами и кнопкой воспроизведения. Состояние: `minimal.state.json`.
 
 Поиск по `game/runtime` не обнаружил module IDs, `sceneEntries`, `provides.sceneEntries` или `moduleId`; scene ID литералы в runtime — только `scene.main-menu` и `scene.state-motion` в базовой карте. Скоуп-поиск cortex-ссылок/зависимостей пустой (grep rc=1 — совпадений нет). Изменений в запрещённых каталогах нет.
@@ -47,4 +49,4 @@ PNG smoke-test: `minimal.png`, 960×540, SHA-256 `d26499b79fd2daea08c90a6c0d5d08
 - `acceptance-status.tsv` — краткая сводка статусов.
 - `test-*.log`, `check-contracts.log`, `i18n-*.log`, `minimal-*.log`, `godot-editor.*.log`, `node-check.log`, `diff-check.log`, `scope-check.log`, `d022-search.log`, `runtime-search.log`, `core-scene-search.log`, `localization-gap.log` — команды/выводы проверок.
 - `minimal.png`, `minimal.state.json` — smoke-test run.
-- `source-proof.log` — проверенный исходный SHA и чистота tracked worktree.
+- `source-proof.log` — проверенный исходный SHA и чистота tracked worktree; `pr-status.log` — статус PR и GitHub i18n check.
