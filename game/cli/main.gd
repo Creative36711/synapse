@@ -32,8 +32,13 @@ func _initialize() -> void:
 	if not args.is_empty() and args[0] == STATE_CAPTURE_ARG:
 		call_deferred("_capture_world_state", args.slice(1))
 		return
+
+	var node_executable := _find_executable("node")
+	if node_executable.is_empty():
+		_emit_node_missing(locale, "not_found")
+		return
 	if not args.is_empty() and args[0] == "run":
-		_run_game(args.slice(1), locale)
+		_run_game(args.slice(1), locale, node_executable)
 		return
 
 	var helper_script := VALIDATOR_SCRIPT
@@ -41,7 +46,10 @@ func _initialize() -> void:
 		helper_script = RESOLVER_SCRIPT
 
 	if args.size() >= 2 and args[0] in ["validate", "resolve"]:
-		args[1] = _absolute_spec_path(args[1])
+		var spec_path := _absolute_spec_path(args[1])
+		if not _ensure_spec_file(spec_path, locale):
+			return
+		args[1] = spec_path
 		args.append("--base-scenes")
 		args.append(",".join(SceneRegistry.SCENES.keys()))
 
@@ -52,10 +60,13 @@ func _initialize() -> void:
 		if not locale_missing:
 			command.append(locale)
 	var output: Array = []
-	var exit_code := OS.execute("node", command, output, true)
+	var exit_code := OS.execute(node_executable, command, output, true)
+	if exit_code < 0 or exit_code == 127 or (exit_code == 1 and args.size() >= 2 and args[0] in ["validate", "resolve"] and _parse_json_output(output).is_empty()):
+		_emit_node_missing(locale, "execution_failed")
+		return
 	for line in output:
 		print(line)
-	quit(exit_code if exit_code >= 0 else 127)
+	quit(exit_code)
 
 
 func _absolute_spec_path(path: String) -> String:
@@ -67,12 +78,14 @@ func _absolute_spec_path(path: String) -> String:
 	return repo_root.path_join(path).simplify_path()
 
 
-func _run_game(args: PackedStringArray, locale: String) -> void:
+func _run_game(args: PackedStringArray, locale: String, node_executable: String) -> void:
 	if args.is_empty():
 		_emit_error("cli.run.usage", {"path": "/run", "expected": ["GameSpec", "--frames", "count", "--shot", "path"], "actual": []}, 2)
 		return
 
 	var spec_path := _absolute_spec_path(args[0])
+	if not _ensure_spec_file(spec_path, locale):
+		return
 	var frame_count := -1
 	var shot_path := ""
 	var state_path := ""
@@ -146,12 +159,15 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 		locale,
 	]
 	var validation_output: Array = []
-	var validation_exit := OS.execute("node", validator_command, validation_output, true)
+	var validation_exit := OS.execute(node_executable, validator_command, validation_output, true)
 	var validation_result := _parse_json_output(validation_output)
-	if validation_exit != 0 or validation_result.is_empty() or not bool(validation_result.get("ok", false)):
+	if validation_exit < 0 or validation_exit == 127 or validation_result.is_empty():
+		_emit_node_missing(locale, "execution_failed")
+		return
+	if validation_exit != 0 or not bool(validation_result.get("ok", false)):
 		for line in validation_output:
 			print(line)
-		quit(validation_exit if validation_exit > 0 else 1)
+		quit(validation_exit)
 		return
 
 	var scene_id := String(validation_result.get("entryScene", ""))
@@ -165,9 +181,11 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 	var entity_definitions: Array = validation_result.get("entities", [])
 	var entity_payload := Marshalls.raw_to_base64(JSON.stringify(entity_definitions).to_utf8_buffer())
 
+	var godot_executable := _find_executable("godot")
+	if godot_executable.is_empty():
+		_emit_catalog_error("runtime.engine.missing", {"path": "/run", "expected": "Godot executable on PATH", "actual": "not_found", "engine": "Godot"}, 1, locale)
+		return
 	var renderer_command := [
-		"SYNAPSE_GODOT_MODE=offscreen",
-		"godot",
 		"--path",
 		ProjectSettings.globalize_path("res://"),
 		"--script",
@@ -182,16 +200,25 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 	renderer_command.append(locale)
 	renderer_command.append(str(input_requested))
 	var renderer_output: Array = []
-	var renderer_exit := OS.execute("env", renderer_command, renderer_output, true)
-	if renderer_exit != 0 or not _has_frame_marker(renderer_output, frame_count):
-		_emit_error("cli.run.render_failed", {"path": "/--shot", "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": renderer_exit}, 1)
+	var renderer_exit := _execute_offscreen(godot_executable, renderer_command, renderer_output, true)
+	var frame_marker_found := _has_frame_marker(renderer_output, frame_count)
+	if renderer_exit != 0 or not frame_marker_found:
+		var renderer_record := _parse_json_output(renderer_output)
+		var actual := {
+			"exit_code": renderer_exit,
+			"frame_marker_found": frame_marker_found,
+			"reason": "renderer_exit_nonzero" if renderer_exit != 0 else "frame_marker_missing",
+		}
+		if not renderer_record.is_empty():
+			actual["renderer_record"] = {"code": renderer_record.get("code", ""), "params": renderer_record.get("params", {})}
+		_emit_catalog_error("cli.run.render_failed", {"path": "/--shot", "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": actual}, 1, locale, "errors.runtime.engine.missing")
 		return
 
 	var png_info := _read_png_info(shot_path)
 	if png_info.is_empty():
 		_emit_error("cli.run.png.invalid", {"path": "/--shot", "expected": {"format": "PNG", "width_minimum": 1, "height_minimum": 1}, "actual": shot_path}, 1)
 		return
-	if state_requested and not _write_world_state(scene_id, scene_path, frame_count, state_path, entity_definitions, input_actions, input_requested):
+	if state_requested and not _write_world_state(scene_id, scene_path, frame_count, state_path, entity_definitions, input_actions, input_requested, godot_executable, locale):
 		return
 	var result := {}
 	result["code"] = "cli.run.complete"
@@ -259,9 +286,48 @@ func _read_input_actions(path: String, locale: String) -> Dictionary:
 	return {"ok": true, "actions": normalized_actions}
 
 
-func _emit_catalog_error(code: String, params: Dictionary, exit_code: int, locale: String) -> void:
-	var record := {"code": code, "params": params, "catalogKey": "errors." + code}
-	var message := _localized_catalog_message(locale, String(record["catalogKey"]), params)
+func _execute_offscreen(executable_path: String, arguments: Array, output: Array, read_stderr: bool) -> int:
+	var environment_launcher := _find_executable("env")
+	if environment_launcher.is_empty():
+		return -1
+	var command := ["SYNAPSE_GODOT_MODE=offscreen", executable_path]
+	command.append_array(arguments)
+	return OS.execute(environment_launcher, command, output, read_stderr)
+
+
+func _find_executable(executable_name: String) -> String:
+	for directory in OS.get_environment("PATH").split(":", false):
+		var candidate := directory.path_join(executable_name)
+		if FileAccess.file_exists(candidate):
+			return candidate.simplify_path()
+	return ""
+
+
+func _ensure_spec_file(path: String, locale: String) -> bool:
+	var spec_file := FileAccess.open(path, FileAccess.READ)
+	if spec_file == null:
+		var actual := "unreadable" if FileAccess.file_exists(path) else "not_found"
+		_emit_catalog_error("spec.file.missing", {"path": "/spec", "expected": "readable file", "actual": actual, "file": path}, 1, locale)
+		return false
+	spec_file.close()
+	return true
+
+
+func _emit_node_missing(locale: String, actual: String) -> void:
+	var params := {
+		"path": "/cli",
+		"expected": "Node.js >=20.19.0",
+		"actual": actual,
+		"dependency": "Node.js",
+		"requiredVersion": ">=20.19.0",
+	}
+	_emit_catalog_error("cli.dependency.node_missing", params, 1, locale, "errors.cli.dependency.node-missing")
+
+
+func _emit_catalog_error(code: String, params: Dictionary, exit_code: int, locale: String, catalog_key: String = "") -> void:
+	var selected_catalog_key := catalog_key if not catalog_key.is_empty() else "errors." + code
+	var record := {"code": code, "params": params, "catalogKey": selected_catalog_key}
+	var message := _localized_catalog_message(locale, selected_catalog_key, params)
 	if not message.is_empty():
 		record["message"] = message
 	_emit_record(record, exit_code)
@@ -303,10 +369,8 @@ func _state_path_error(path: String, repo_root: String) -> String:
 	return ""
 
 
-func _write_world_state(scene_id: String, scene_path: String, frame_count: int, state_path: String, entity_definitions: Array, input_actions: Array, input_requested: bool) -> bool:
+func _write_world_state(scene_id: String, scene_path: String, frame_count: int, state_path: String, entity_definitions: Array, input_actions: Array, input_requested: bool, godot_executable: String, locale: String) -> bool:
 	var capture_command := [
-		"SYNAPSE_GODOT_MODE=offscreen",
-		"godot",
 		"--headless",
 		"--path",
 		ProjectSettings.globalize_path("res://"),
@@ -323,11 +387,15 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 		str(input_requested),
 	]
 	var capture_output: Array = []
-	var capture_exit := OS.execute("env", capture_command, capture_output, true)
+	var capture_exit := _execute_offscreen(godot_executable, capture_command, capture_output, true)
 	if capture_exit != 0:
-		for line in capture_output:
-			print(line)
-		quit(capture_exit if capture_exit > 0 else 1)
+		var capture_record := _parse_json_output(capture_output)
+		if not capture_record.is_empty():
+			for line in capture_output:
+				print(line)
+			quit(capture_exit if capture_exit > 0 else 1)
+		else:
+			_emit_catalog_error("cli.run.render_failed", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": {"exit_code": capture_exit, "reason": "state_capture_process_failed"}}, 1, locale, "errors.runtime.engine.missing")
 		return false
 	var capture_record := _parse_json_output(capture_output)
 	var state_bytes := FileAccess.get_file_as_bytes(state_path)

@@ -21,7 +21,6 @@ godot --version                        # 4.7.2.stable.custom_build...
 * `/tmp` is not persistent in most sandboxes — just re-run `install.sh` at the start of a session.
 * Requirements: Linux x86_64, glibc ≥ 2.35 (Ubuntu 22.04+/Debian 12+), `xz`, `tar`, `sha256sum`.
   No other system libraries are needed in offscreen mode (static libstdc++, X11/audio are optional dlopen).
-* The repository is private: the agent needs GitHub access to `Creative36711/synapse` to clone it.
 
 ## 2. Running Godot — no GPU, no display needed
 

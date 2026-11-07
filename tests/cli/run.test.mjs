@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,14 +17,19 @@ const ARENA_TEST_DIR = '/tmp/synapse-k44-arena-test';
 const SHOT_PATH = join(TEST_DIR, 'minimal.png');
 const SUPPORTED_LOCALES = ['en', 'ru', 'zh-Hans', 'ja', 'pt-BR', 'de', 'fr', 'ko'];
 
-function runCli(args) {
+function runCli(args, envOverrides = {}) {
   return spawnSync(GODOT, [
     '--headless', '--path', 'game', '--script', 'res://cli/main.gd', '--', ...args,
   ], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     timeout: 120_000,
-    env: { ...process.env, PATH: GODOT_PATH, SYNAPSE_GODOT_MODE: 'offscreen' },
+    env: {
+      ...process.env,
+      PATH: envOverrides.PATH ?? GODOT_PATH,
+      SYNAPSE_GODOT_MODE: 'offscreen',
+      ...envOverrides,
+    },
   });
 }
 
@@ -230,7 +235,112 @@ test('public run --input applies deterministic actions and localizes a missing i
   assert.equal(malformedDiagnostic.code, 'field.type');
   assert.equal(malformedDiagnostic.catalogKey, 'errors.field.type');
   assert.ok(malformedDiagnostic.message.length > 0);
-  assert.doesNotMatch(`${malformedRun.stdout}\\n${malformedRun.stderr}`, /ENOENT|127/);
+  assert.doesNotMatch(`${malformedRun.stdout}\n${malformedRun.stderr}`, /ENOENT|127/);
+});
+
+test('missing GameSpec files produce localized spec.file.missing records without leaking ENOENT', { timeout: 120_000 }, () => {
+  rmSync(ARENA_TEST_DIR, { recursive: true, force: true });
+  mkdirSync(ARENA_TEST_DIR, { recursive: true });
+  const missingSpec = join(ARENA_TEST_DIR, 'missing.game.yaml');
+  const results = {};
+  for (const locale of ['en', 'ja']) {
+    const validate = runCli(['validate', missingSpec, '--lang', locale]);
+    assert.equal(validate.status, 1, `${validate.stdout}\n${validate.stderr}`);
+    results[locale] = machineRecord(validate.stdout);
+    assert.equal(results[locale].code, 'spec.file.missing');
+    assert.equal(results[locale].catalogKey, 'errors.spec.file.missing');
+    assert.equal(results[locale].params.file, missingSpec);
+    assert.doesNotMatch(`${validate.stdout}\n${validate.stderr}`, /ENOENT|127/);
+
+    const run = runCli([
+      'run', missingSpec, '--frames', '1', '--shot', join(ARENA_TEST_DIR, `${locale}.png`), '--lang', locale,
+    ]);
+    assert.equal(run.status, 1, `${run.stdout}\n${run.stderr}`);
+    const runRecord = machineRecord(run.stdout);
+    assert.equal(runRecord.code, results[locale].code);
+    assert.deepEqual(runRecord.params, results[locale].params);
+    assert.notEqual(runRecord.message, '');
+    assert.doesNotMatch(`${run.stdout}\n${run.stderr}`, /ENOENT|127/);
+  }
+  assert.deepEqual(results.ja.params, results.en.params);
+  assert.notEqual(results.ja.message, results.en.message);
+});
+
+test('missing Node.js produces cli.dependency.node_missing with localized stable params', { timeout: 60_000 }, () => {
+  const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-no-node-'));
+  try {
+    for (const utility of ['bash', 'dirname']) {
+      const source = process.env.PATH.split(':').map((directory) => join(directory, utility)).find((candidate) => existsSync(candidate));
+      assert.ok(source, `${utility} must be available to launch the bundled Godot wrapper`);
+      symlinkSync(source, join(isolatedPath, utility));
+    }
+    const results = {};
+    for (const locale of ['en', 'ja']) {
+      const result = runCli(['validate', 'examples/minimal.game.yaml', '--lang', locale], { PATH: isolatedPath });
+      assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+      results[locale] = machineRecord(result.stdout);
+      assert.equal(results[locale].code, 'cli.dependency.node_missing');
+      assert.equal(results[locale].catalogKey, 'errors.cli.dependency.node-missing');
+      assert.ok(results[locale].message.length > 0);
+      assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|node: not found/i);
+    }
+    assert.deepEqual(results.ja.params, results.en.params);
+    assert.equal(results.ja.catalogKey, results.en.catalogKey);
+    assert.notEqual(results.ja.message, results.en.message);
+  } finally {
+    rmSync(isolatedPath, { recursive: true, force: true });
+  }
+});
+
+test('missing Godot produces runtime.engine.missing instead of render_failed or 127', { timeout: 120_000 }, () => {
+  const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-no-godot-'));
+  try {
+    symlinkSync(process.execPath, join(isolatedPath, 'node'));
+    const path = `${isolatedPath}:/usr/bin:/bin`;
+    const results = {};
+    for (const locale of ['en', 'ja']) {
+      const result = runCli([
+        'run', 'examples/minimal.game.yaml', '--frames', '1',
+        '--shot', join(isolatedPath, `${locale}.png`), '--lang', locale,
+      ], { PATH: path });
+      assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+      results[locale] = machineRecord(result.stdout);
+      assert.equal(results[locale].code, 'runtime.engine.missing');
+      assert.equal(results[locale].catalogKey, 'errors.runtime.engine.missing');
+      assert.ok(results[locale].message.length > 0);
+      assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|render_failed/);
+    }
+    assert.deepEqual(results.ja.params, results.en.params);
+    assert.notEqual(results.ja.message, results.en.message);
+  } finally {
+    rmSync(isolatedPath, { recursive: true, force: true });
+  }
+});
+
+test('cli.run.render_failed retains machine-readable renderer cause in params', { timeout: 120_000 }, () => {
+  const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-failing-godot-'));
+  try {
+    symlinkSync(process.execPath, join(isolatedPath, 'node'));
+    const fakeGodot = join(isolatedPath, 'godot');
+    writeFileSync(fakeGodot, `#!/bin/sh
+printf '%s\\n' '{"code":"test.renderer.failure","params":{"reason":"fixture_failure"}}'
+exit 42
+`);
+    chmodSync(fakeGodot, 0o755);
+    const result = runCli([
+      'run', 'examples/minimal.game.yaml', '--frames', '1', '--shot', join(isolatedPath, 'failed.png'), '--lang', 'en',
+    ], { PATH: `${isolatedPath}:/usr/bin:/bin` });
+    assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+    const record = machineRecord(result.stdout);
+    assert.equal(record.code, 'cli.run.render_failed');
+    assert.equal(record.catalogKey, 'errors.runtime.engine.missing');
+    assert.equal(record.params.actual.renderer_record.code, 'test.renderer.failure');
+    assert.equal(record.params.actual.renderer_record.params.reason, 'fixture_failure');
+    assert.ok(record.message.length > 0);
+    assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127/);
+  } finally {
+    rmSync(isolatedPath, { recursive: true, force: true });
+  }
 });
 
 test('validate and resolve remain machine-readable through the public Godot CLI', { timeout: 60_000 }, () => {
@@ -539,7 +649,7 @@ test('run resolves a module scene entry and instantiates GameSpec entities from 
     const mutableDefinition = readFileSync(specPath, 'utf8').replace('      health: 100', '      state: "mutable"');
     writeFileSync(specPath, mutableDefinition);
     const mutable = runCli(['validate', specPath]);
-    assert.equal(mutable.status, 1, `${mutable.stdout}\\n${mutable.stderr}`);
+    assert.equal(mutable.status, 1, `${mutable.stdout}\n${mutable.stderr}`);
     const stateError = machineRecord(mutable.stdout).errors[0];
     assert.equal(stateError.code, 'definition.state.forbidden');
     assert.equal(stateError.params.path, '/entities/0/properties/state');
