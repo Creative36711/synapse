@@ -178,8 +178,9 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 		shot_path,
 		entity_payload,
 	]
-	if input_requested:
-		renderer_command.append(Marshalls.raw_to_base64(JSON.stringify(input_actions).to_utf8_buffer()))
+	renderer_command.append(Marshalls.raw_to_base64(JSON.stringify(input_actions).to_utf8_buffer()))
+	renderer_command.append(locale)
+	renderer_command.append(str(input_requested))
 	var renderer_output: Array = []
 	var renderer_exit := OS.execute("env", renderer_command, renderer_output, true)
 	if renderer_exit != 0 or not _has_frame_marker(renderer_output, frame_count):

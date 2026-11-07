@@ -109,12 +109,12 @@ test('arena GameSpec produces a locale-independent state fingerprint with moveme
   for (let frame = 61; frame <= 100; frame += 1) actions.push({ frame, action: 'move_down' });
   writeFileSync(inputPath, JSON.stringify({ actions }));
 
-  const runArena = (frames, locale, suffix) => {
+  const runArena = (frames, locale, suffix, localeOption = '--lang') => {
     const shotPath = join(ARENA_TEST_DIR, `${suffix}.png`);
     const statePath = join(ARENA_TEST_DIR, `${suffix}.json`);
     const result = runCli([
       'run', 'examples/arena.game.yaml', '--frames', String(frames), '--shot', shotPath,
-      '--lang', locale, '--state', statePath, '--input', inputPath,
+      localeOption, locale, '--state', statePath, '--input', inputPath,
     ]);
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     const record = machineRecord(result.stdout);
@@ -154,9 +154,13 @@ test('arena GameSpec produces a locale-independent state fingerprint with moveme
   assert.notDeepEqual(frame0.bytes, frame60.bytes);
   assert.notDeepEqual(frame60.bytes, frame120.bytes);
 
-  for (const locale of ['de', 'ru', 'zh-Hans']) {
-    const localized = runArena(120, locale, `locale-${locale}`);
+  for (const [locale, localeOption] of [
+    ['ru', '--lang'], ['zh-Hans', '--locale'], ['ja', '--lang'], ['pt-BR', '--lang'],
+    ['de', '--lang'], ['fr', '--lang'], ['ko', '--lang'],
+  ]) {
+    const localized = runArena(120, locale, `locale-${locale}`, localeOption);
     assert.deepEqual(localized.bytes, frame120.bytes, `${locale} must produce identical world-state bytes`);
+    assert.notDeepEqual(localized.png, frame120.png, `${locale} UI must render localized catalog text`);
   }
   const repeat = runArena(120, 'en', 'repeat-120');
   assert.deepEqual(repeat.bytes, frame120.bytes, 'repeating the same run must preserve state bytes');
