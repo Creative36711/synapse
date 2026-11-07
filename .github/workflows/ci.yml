@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      SYNAPSE_GODOT_MODE: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install locked npm dependencies offline
+        run: ./tools/deps/offline-install.sh
+      - name: Install bundled Godot
+        run: |
+          tools/godot/install.sh
+          echo /tmp/synapse-godot/bin >> "$GITHUB_PATH"
+      - run: npm run check:contracts
+      - run: npm run test:contracts
+      - run: npm run test:validation
+      - run: npm run test:modules
+      - run: npm run test:i18n
+      - run: npm run test:cli
+      - run: npm run test:runtime
+      - run: npm run test:deps
+      - run: npm run i18n-check
+      - run: npm run i18n-no-literals

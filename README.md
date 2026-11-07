@@ -30,6 +30,20 @@ godot --version
 | `tools/media/` | Вырезание хромакея. Гайд — [`tools/media/GENERATION_GUIDE.md`](tools/media/GENERATION_GUIDE.md) |
 | `tools/modeling/` | Blender 4.5 без экрана (`bpy`): 3D-модели, GLB/gltf-экспорт, Cycles CPU-рендер |
 
+## CLI GameSpec
+
+Публичный CLI запускается через Godot и для валидации/резолва требует **Node.js >= 20.19.0**. Репозиторий хранит зафиксированные npm-зависимости в `vendor/npm/`; установить их без сети можно командой `./tools/deps/offline-install.sh`. Скрипт и процедура проверки описаны в [руководстве по офлайн-зависимостям](tools/deps/README.md). Сам Node.js должен быть установлен отдельно и доступен как `node` в `PATH`.
+
+```bash
+godot --headless --path game --script res://cli/main.gd -- validate examples/minimal.game.yaml --lang en
+godot --headless --path game --script res://cli/main.gd -- resolve examples/minimal.game.yaml
+godot --headless --path game --script res://cli/main.gd -- run examples/minimal.game.yaml \
+  --frames 120 --shot /tmp/synapse.png --lang en \
+  --state /tmp/synapse-state.json --input /tmp/actions.json
+```
+
+Команды `validate`, `resolve` и `run` принимают локаль через `--lang` (синоним `--locale`). `run` принимает `--frames`, абсолютный PNG-путь `--shot`, необязательные абсолютные JSON-пути `--state` и `--input`. Вывод `--state` — канонический `synapse.world-state.v1` fingerprint, который не зависит от локали; `--input` — JSON-действия для детерминированного прогона.
+
 ## Медиа: вырезание фона (хромакей)
 
 ```bash
