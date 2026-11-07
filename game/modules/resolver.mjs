@@ -603,6 +603,14 @@ function loadCatalog() {
   return JSON.parse(readFileSync(CATALOG_PATH, 'utf8'));
 }
 
+function modulesProvidingUnmappedScene(assignments, order, sceneId) {
+  return order.filter((moduleId) => {
+    const manifest = assignments.get(moduleId).manifest;
+    return (manifest.provides.scenes ?? []).includes(sceneId)
+      && !(manifest.provides.sceneEntries ?? []).some((entry) => entry.id === sceneId);
+  }).sort((left, right) => left.localeCompare(right, 'en'));
+}
+
 export function resolveGameSpec(gameSpec, specPath, baseSceneIds = null) {
   const catalog = loadCatalog();
   const gameValidator = compileSchema(GAME_SCHEMA_PATH);
@@ -675,11 +683,12 @@ export function resolveGameSpec(gameSpec, specPath, baseSceneIds = null) {
   if (Array.isArray(baseSceneIds) && !availableSceneIds.includes(gameSpec.entry.scene)) {
     return {
       ok: false,
-      errors: [diagnostic(catalog, 'scene.entry.unknown', {
+      errors: [diagnostic(catalog, 'ref.unresolved', {
         path: '/entry/scene',
         expected: availableSceneIds,
         actual: gameSpec.entry.scene,
-        sceneId: gameSpec.entry.scene,
+        refKind: 'scene',
+        providedBy: modulesProvidingUnmappedScene(assignments, order, gameSpec.entry.scene),
       })],
     };
   }

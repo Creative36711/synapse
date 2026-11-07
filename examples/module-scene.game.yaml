@@ -1,0 +1,12 @@
+# Почему: этот короткий GameSpec показывает, что модуль может объявить сцену, реально привязанную к ресурсу, а не только назвать её.
+specVersion: "1.0"
+game:
+  id: "example.modulescene"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.example.module-workshop"
+modules:
+  - id: "synapse.example.modulescene"
+    version: "1.0.0"
+entities: []
