@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SYNAPSE_GODOT_MODE: offscreen
+      GODOT_BIN: /tmp/synapse-godot/bin/godot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
