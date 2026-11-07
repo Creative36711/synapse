@@ -15,5 +15,17 @@
   "errors.module.version.unsatisfied": "Aucune version disponible ne satisfait {constraint} à {path} ; versions disponibles : {available}.",
   "errors.module.conflict": "Le module {conflictId} entre en conflit avec la compilation sélectionnée à {path} (contrainte {constraint}).",
   "errors.ref.unresolved": "Aucun module sélectionné ne fournit {refKind} {actual} à {path}.",
-  "errors.cli.usage": "Utilisation : validate|resolve <chemin du GameSpec>"
+  "errors.cli.usage": "Utilisation : validate|resolve <chemin du GameSpec>",
+  "errors.scene.entry.unknown": "La scène {actual} à {path} n’est pas enregistrée ; une des valeurs suivantes était attendue : {expected}.",
+  "errors.scene.duplicate": "L’identifiant de scène {actual} est enregistré plusieurs fois à {path}.",
+  "errors.scene.resource.missing": "La ressource de scène {actual} est absente à {path}.",
+  "errors.spec.file.missing": "Le fichier de spécification {file} est illisible à {path} ; attendu {expected}, reçu {actual}.",
+  "errors.runtime.engine.missing": "Le moteur d’exécution {engine} est indisponible à {path} ; attendu {expected}, reçu {actual}.",
+  "errors.cli.dependency.node-missing": "La dépendance CLI {dependency} est indisponible à {path} ; version requise {requiredVersion}, reçu {actual}.",
+  "ui.minigame.score": "Score : {score}",
+  "ui.minigame.win_condition": "Atteignez {target} points pour gagner.",
+  "ui.minigame.controls_hint": "Déplacement : {left}/{right} ; saut : {jump}.",
+  "ui.minigame.button.start": "Démarrer",
+  "ui.minigame.button.pause": "Pause",
+  "ui.minigame.button.restart": "Recommencer"
 }

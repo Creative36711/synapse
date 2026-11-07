@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, cpSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { createI18n } from '../../game/i18n/index.mjs';
+import { createI18n, SUPPORTED_LOCALES } from '../../game/i18n/index.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const VALIDATOR = join(ROOT, 'game/validation/validator.mjs');
@@ -96,5 +96,33 @@ test('valid module graph validation output is byte-identical in en and de', () =
     assert.deepEqual(english.report.moduleOrder, ['synapse.test.base', 'synapse.test.core', 'synapse.test.data', 'synapse.test.app', 'synapse.test.extra']);
   } finally {
     rmSync(fixtureDir, { recursive: true, force: true });
+  }
+});
+
+test('all S-2 registered diagnostics localize messages without changing code or params', () => {
+  const registry = JSON.parse(readFileSync(join(ROOT, 'schema/error-registry.json'), 'utf8'));
+  const diagnostics = [
+    { code: 'scene.entry.unknown', params: { path: '/entry/scene', expected: ['scene.main-menu'], actual: 'scene.unknown' } },
+    { code: 'scene.duplicate', params: { path: '/provides/sceneEntries/1/id', expected: 'unique scene ID', actual: 'scene.main-menu' } },
+    { code: 'scene.resource.missing', params: { path: '/provides/sceneEntries/0/resource', expected: 'existing resource', actual: 'res://missing.tscn' } },
+    { code: 'spec.file.missing', params: { path: '/spec', expected: 'readable file', actual: 'ENOENT', file: 'game.yaml' } },
+    { code: 'runtime.engine.missing', params: { path: '/--run', expected: 'Godot executable', actual: 'not found', engine: 'godot' } },
+    { code: 'cli.dependency.node-missing', params: { path: '/cli', expected: 'Node.js', actual: 'not found', dependency: 'node', requiredVersion: '>=20' } },
+  ].map((entry) => ({ ...entry, catalogKey: `errors.${entry.code}` }));
+
+  for (const diagnostic of diagnostics) {
+    assert.ok(registry.codes.some((entry) => entry.code === diagnostic.code && entry.catalogKey === diagnostic.catalogKey));
+  }
+
+  const baselineIdentity = diagnostics.map(({ code, params, catalogKey }) => ({ code, params, catalogKey }));
+  for (const locale of SUPPORTED_LOCALES) {
+    const i18n = createI18n({ locale });
+    const localized = diagnostics.map((diagnostic) => i18n.formatDiagnostic(diagnostic));
+    assert.deepEqual(localized.map(({ code, params, catalogKey }) => ({ code, params, catalogKey })), baselineIdentity);
+    for (const result of localized) {
+      assert.equal(typeof result.message, 'string', `${locale} ${result.code}`);
+      assert.ok(result.message.length > 0, `${locale} ${result.code}`);
+      assert.doesNotMatch(result.message, /\{[A-Za-z][A-Za-z0-9_]*\}/, `${locale} ${result.code} has unresolved placeholders`);
+    }
   }
 });

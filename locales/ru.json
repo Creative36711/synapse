@@ -15,5 +15,17 @@
   "errors.module.version.unsatisfied": "Нет доступной версии, удовлетворяющей ограничению {constraint} по пути {path}; доступные версии: {available}.",
   "errors.module.conflict": "Модуль {conflictId} конфликтует с выбранной сборкой по пути {path} (ограничение {constraint}).",
   "errors.ref.unresolved": "Ни один выбранный модуль не предоставляет {refKind} {actual} по пути {path}.",
-  "errors.cli.usage": "Использование: validate|resolve <путь к GameSpec>"
+  "errors.cli.usage": "Использование: validate|resolve <путь к GameSpec>",
+  "errors.scene.entry.unknown": "Сцена {actual} по пути {path} не зарегистрирована; ожидается одно из значений: {expected}.",
+  "errors.scene.duplicate": "Идентификатор сцены {actual} повторно зарегистрирован по пути {path}.",
+  "errors.scene.resource.missing": "Ресурс сцены {actual} отсутствует по пути {path}.",
+  "errors.spec.file.missing": "Не удалось прочитать файл спецификации {file} по пути {path}: ожидалось {expected}, получено {actual}.",
+  "errors.runtime.engine.missing": "Среда выполнения {engine} недоступна по пути {path}: ожидалось {expected}, получено {actual}.",
+  "errors.cli.dependency.node-missing": "Зависимость CLI {dependency} недоступна по пути {path}: требуется {requiredVersion}, обнаружено {actual}.",
+  "ui.minigame.score": "Счёт: {score}",
+  "ui.minigame.win_condition": "Наберите {target} очков, чтобы победить.",
+  "ui.minigame.controls_hint": "Движение: {left}/{right}; прыжок: {jump}.",
+  "ui.minigame.button.start": "Начать",
+  "ui.minigame.button.pause": "Пауза",
+  "ui.minigame.button.restart": "Заново"
 }

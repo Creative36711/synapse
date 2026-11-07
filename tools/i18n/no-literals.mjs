@@ -7,6 +7,9 @@ const IGNORED_DIRECTORIES = new Set(['.git', '.godot', 'node_modules']);
 const GAME_EXTENSIONS = new Set(['.gd', '.tscn', '.mjs', '.js', '.cjs']);
 const CLI_EXTENSIONS = new Set(['.mjs', '.js', '.cjs']);
 const DISPLAY_PROPERTIES = new Set(['text', 'tooltip_text', 'placeholder_text', 'window_title', 'title']);
+const SCENE_DISPLAY_PROPERTY_PATTERN = new RegExp(
+  `^\\s*(${[...DISPLAY_PROPERTIES].join('|')})\\s*=\\s*("(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*')\\s*(?:;.*)?$`,
+);
 const GODOT_OUTPUT_CALLS = new Set(['set_text', 'print', 'printerr', 'push_error', 'push_warning']);
 const JS_CONSOLE_METHODS = new Set(['log', 'info', 'warn', 'error', 'debug']);
 const JS_LOCALIZERS = new Set(['t', 'tr', 'translate', 'localize']);
@@ -272,9 +275,8 @@ function addViolation(violations, file, line, mechanism, property = undefined) {
 }
 
 function inspectScene(source, file, violations) {
-  const propertyPattern = /^\s*(text|tooltip_text|placeholder_text|window_title|title)\s*=\s*("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')\s*(?:;.*)?$/;
   source.split(/\r?\n/).forEach((line, index) => {
-    const match = line.match(propertyPattern);
+    const match = line.match(SCENE_DISPLAY_PROPERTY_PATTERN);
     if (!match) return;
     const literal = match[2].slice(1, -1);
     if (hasVisibleCharacters(literal)) addViolation(violations, file, index + 1, 'display-property', match[1]);

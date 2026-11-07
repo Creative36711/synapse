@@ -1,0 +1,16 @@
+{
+  "game.example_minimal.title": "最简游戏示例",
+  "game.example_cycle.title": "循环依赖示例",
+  "game.example_state_motion.title": "状态动画示例",
+  "game.example_broken.title": "无效游戏示例",
+  "game.synapse_demo_garden.title": "花园示例",
+  "game.synapse_demo_garden.description": "一个有可移动物体的小花园。",
+  "entity.garden.player.name": "园丁",
+  "entity.garden.crate.name": "种子箱",
+  "ui.minigame.score": "得分：{score}",
+  "ui.minigame.win_condition": "达到 {target} 分即可获胜。",
+  "ui.minigame.controls_hint": "移动：{left}/{right}；跳跃：{jump}。",
+  "ui.minigame.button.start": "开始",
+  "ui.minigame.button.pause": "暂停",
+  "ui.minigame.button.restart": "重新开始"
+}
