@@ -1,0 +1,13 @@
+specVersion: "1.0"
+module:
+  id: "synapse.core.ui"
+  version: "1.0.0"
+  titleKey: "module.synapse_core_ui.title"
+requires:
+  spec: "1.0"
+  engine: ">=4.7.0 <5.0.0"
+provides:
+  scenes: ["scene.main-menu"]
+  sceneEntries:
+    - id: "scene.main-menu"
+      resource: "/runtime/scenes/main_menu.tscn"

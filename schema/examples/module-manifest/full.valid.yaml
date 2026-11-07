@@ -21,4 +21,10 @@ conflicts:
     reasonKey: "module.synapse_core_platformer.conflict.legacy"
 provides:
   scenes: ["scene.platformer.level", "scene.platformer.pause"]
+  # Законная связь смыслового ID сцены с ресурсом движка: id входит в scenes выше.
+  sceneEntries:
+    - id: "scene.platformer.level"
+      resource: "res://modules/platformer/scenes/level.tscn"
+    - id: "scene.platformer.pause"
+      resource: "res://modules/platformer/scenes/pause.tscn"
   locales: ["en", "ru"]

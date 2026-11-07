@@ -1,7 +1,10 @@
 {
   "$comment": "Контрактные примеры манифеста модуля: что обязано проходить, что обязано падать и с каким кодом/путём.",
   "schema": "../../module-manifest.schema.json",
-  "valid": ["minimal.valid.yaml", "full.valid.yaml"],
+  "valid": [
+    "minimal.valid.yaml",
+    "full.valid.yaml"
+  ],
   "invalid": [
     {
       "file": "invalid/unknown-field.yaml",
@@ -50,6 +53,42 @@
       "code": "field.required",
       "keyword": "required",
       "path": "/conflicts/0/reasonKey"
+    },
+    {
+      "file": "invalid/scene-entry-unknown-field.yaml",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/provides/sceneEntries/0/preload"
+    },
+    {
+      "file": "invalid/scene-entry-missing-resource.yaml",
+      "code": "field.required",
+      "keyword": "required",
+      "path": "/provides/sceneEntries/0/resource"
+    },
+    {
+      "file": "invalid/scene-resource-absolute.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/provides/sceneEntries/0/resource"
+    },
+    {
+      "file": "invalid/scene-resource-dotdot.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/provides/sceneEntries/0/resource"
+    },
+    {
+      "file": "invalid/scene-resource-not-tscn.yaml",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/provides/sceneEntries/0/resource"
+    },
+    {
+      "file": "invalid/duplicate-scene-entry.yaml",
+      "code": "field.unique",
+      "keyword": "uniqueItems",
+      "path": "/provides/sceneEntries"
     }
   ]
 }

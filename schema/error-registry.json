@@ -157,6 +157,60 @@
       "params": ["path", "expected", "actual"],
       "extraParams": ["refKind", "providedBy"],
       "catalogKey": "errors.ref.unresolved"
+    },
+    {
+      "code": "scene.entry.unknown",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Запись provides.sceneEntries объявляет смысловой ID сцены, которого нет в provides.scenes этого модуля: связь ведёт в никуда. Каждый id записи обязан входить в provides.scenes.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["sceneId", "moduleId"],
+      "catalogKey": "errors.scene.entry.unknown"
+    },
+    {
+      "code": "scene.duplicate",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Один смысловой ID сцены сопоставлен ресурсу больше одного раза: внутри манифеста или между модулями одной сборки. Последняя запись не выигрывает — это ошибка, а не перекрытие.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["sceneId", "modules"],
+      "catalogKey": "errors.scene.duplicate"
+    },
+    {
+      "code": "scene.resource.missing",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Ресурс res://…tscn, объявленный в provides.sceneEntries, отсутствует в сборке. Проверка файловая и офлайн: без сети, без импорта ассетов и без запуска движка.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["sceneId", "resource"],
+      "catalogKey": "errors.scene.resource.missing"
+    },
+    {
+      "code": "spec.file.missing",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Файл спецификации (GameSpec или манифест модуля), переданный CLI, не читается: файла нет, нет прав или по пути каталог. Разбор и проверка схемы не начинаются.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["file"],
+      "catalogKey": "errors.spec.file.missing"
+    },
+    {
+      "code": "runtime.engine.missing",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Движок, которым выполняется run, недоступен: бинарник не найден или не запускается. Валидация к этому моменту уже прошла, рендер не начат, шот не создан.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["engine"],
+      "catalogKey": "errors.runtime.engine.missing"
+    },
+    {
+      "code": "cli.dependency.node-missing",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "CLI нужен Node.js для валидатора и резолвера, а node недоступен в окружении. Проверка не выполнена — это ошибка, а не пропуск и не успех.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["dependency", "requiredVersion"],
+      "catalogKey": "errors.cli.dependency.node-missing"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.synapse.invalid/gamespec/1.0",
-  "title": "GameSpec 1.0 (черновик K-2)",
+  "title": "GameSpec 1.0",
   "$comment": "Структурный контракт описание игры. Проверяется JSON Schema 2020-12. Семантические правила (существование ключей каталога, default ∈ supported, доступность сцен) — K-3, разрешение зависимостей — K-4. Схема самодостаточна: внешних $ref нет, проверка работает офлайн (INV-1).",
   "type": "object",
   "additionalProperties": false,
@@ -34,6 +34,14 @@
     },
     "locales": {
       "$ref": "#/$defs/locales"
+    },
+    "entities": {
+      "type": "array",
+      "default": [],
+      "description": "Определения сущностей игры: смысловой ID и неизменяемые свойства, из которых создаётся экземпляр. Определение не хранит изменяемого состояния экземпляра (INV-4): прогресс, сейвы и рантайм-поля живут вне GameSpec.",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
     }
   },
   "$defs": {
@@ -62,6 +70,15 @@
       "examples": [
         "scene.main-menu",
         "scene.platformer.level"
+      ]
+    },
+    "entityId": {
+      "type": "string",
+      "pattern": "^entity(\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$",
+      "description": "Смысловой идентификатор сущности с обязательным префиксом entity. (INV-3). Имя файла, узла или ассета сюда не пишется.",
+      "examples": [
+        "entity.player",
+        "entity.ui.hud"
       ]
     },
     "translationKey": {
@@ -184,6 +201,44 @@
           }
         }
       }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Определение сущности: что это и с какими свойствами создаётся экземпляр. Полей состояния экземпляра (state, save, runtime) здесь нет (INV-4); изменяемые значения появляются только в рантайме.",
+      "required": [
+        "id",
+        "properties"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/entityId"
+        },
+        "properties": {
+          "type": "object",
+          "description": "Начальные свойства экземпляра: только примитивы — строка, число, булево, null. Вложенные объекты и массивы запрещены: это уже структура изменяемого состояния, а не определение. Пользовательский текст сюда не пишется — только ключ каталога (INV-9).",
+          "additionalProperties": {
+            "$ref": "#/$defs/primitive"
+          }
+        }
+      }
+    },
+    "primitive": {
+      "description": "Примитив значения свойства: строка, число, булево или null. Массив и объект примитивом не считаются.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   }
 }
