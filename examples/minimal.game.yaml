@@ -1,4 +1,5 @@
 # Smallest GameSpec accepted by the local validator.
+# Temporary CI probe: comment-only example change verifies the unfiltered pull_request workflow.
 specVersion: "1.0"
 game:
   id: "example.minimal"
