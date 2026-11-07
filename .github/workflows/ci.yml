@@ -29,7 +29,26 @@ jobs:
       - run: npm run test:validation
       - run: npm run test:modules
       - run: npm run test:i18n
-      - run: npm run test:cli
+      - name: test:cli — frame and arena behavior
+        env:
+          SYNAPSE_CLI_TEST_PATTERN: 'run validates|arena GameSpec|public run --input'
+        run: npm run test:cli
+      - name: test:cli — environment diagnostics
+        env:
+          SYNAPSE_CLI_TEST_PATTERN: 'missing GameSpec|missing Node|missing Godot|render_failed'
+        run: npm run test:cli
+      - name: test:cli — flags and validation
+        env:
+          SYNAPSE_CLI_TEST_PATTERN: 'validate and resolve|validate treats|run applies|missing and unsupported|unknown option'
+        run: npm run test:cli
+      - name: test:cli — state capture
+        env:
+          SYNAPSE_CLI_TEST_PATTERN: 'run --state'
+        run: npm run test:cli
+      - name: test:cli — module scenes and semantics
+        env:
+          SYNAPSE_CLI_TEST_PATTERN: 'state-motion|run resolves|unknown semantic scene'
+        run: npm run test:cli
       - run: npm run test:runtime
       - run: npm run test:deps
       - run: npm run i18n-check

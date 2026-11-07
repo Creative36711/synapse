@@ -200,7 +200,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 	renderer_command.append(locale)
 	renderer_command.append(str(input_requested))
 	var renderer_output: Array = []
-	var renderer_exit := OS.execute(godot_executable, renderer_command, renderer_output, true)
+	var renderer_exit := _execute_offscreen(godot_executable, renderer_command, renderer_output, true)
 	var frame_marker_found := _has_frame_marker(renderer_output, frame_count)
 	if renderer_exit != 0 or not frame_marker_found:
 		var renderer_record := _parse_json_output(renderer_output)
@@ -284,6 +284,15 @@ func _read_input_actions(path: String, locale: String) -> Dictionary:
 		normalized_action["frame"] = int(action_frame)
 		normalized_actions.append(normalized_action)
 	return {"ok": true, "actions": normalized_actions}
+
+
+func _execute_offscreen(executable_path: String, arguments: Array, output: Array, read_stderr: bool) -> int:
+	var environment_launcher := _find_executable("env")
+	if environment_launcher.is_empty():
+		return -1
+	var command := ["SYNAPSE_GODOT_MODE=offscreen", executable_path]
+	command.append_array(arguments)
+	return OS.execute(environment_launcher, command, output, read_stderr)
 
 
 func _find_executable(executable_name: String) -> String:
@@ -378,7 +387,7 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 		str(input_requested),
 	]
 	var capture_output: Array = []
-	var capture_exit := OS.execute(godot_executable, capture_command, capture_output, true)
+	var capture_exit := _execute_offscreen(godot_executable, capture_command, capture_output, true)
 	if capture_exit != 0:
 		var capture_record := _parse_json_output(capture_output)
 		if not capture_record.is_empty():
