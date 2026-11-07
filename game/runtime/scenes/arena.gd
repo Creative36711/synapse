@@ -3,6 +3,12 @@ extends Node2D
 const VIEW_SIZE := Vector2(960.0, 540.0)
 const DEFAULT_PLAYER_POSITION := Vector2(120.0, 270.0)
 const PLAYER_BOUNDS := Rect2(Vector2(24.0, 92.0), Vector2(912.0, 424.0))
+const SCORE_TEXT_KEY := "ui.minigame.score"
+const WIN_CONDITION_KEY := "ui.minigame.win_condition"
+const CONTROLS_HINT_KEY := "ui.minigame.controls_hint"
+const START_BUTTON_KEY := "ui.minigame.button.start"
+const PAUSE_BUTTON_KEY := "ui.minigame.button.pause"
+const RESTART_BUTTON_KEY := "ui.minigame.button.restart"
 const DIGIT_SEGMENTS := {
 	0: [0, 1, 2, 4, 5, 6],
 	1: [1, 2],
@@ -26,6 +32,9 @@ var _actions_by_frame: Dictionary = {}
 var _explicit_input := false
 var _frame_index := 0
 var _input_action_count := 0
+var _score_label: Label
+var _win_condition_label: Label
+var _controls_hint_label: Label
 
 
 func configure_input(actions: Array) -> void:
@@ -35,7 +44,88 @@ func configure_input(actions: Array) -> void:
 
 func _ready() -> void:
 	set_process(true)
+	_create_localized_ui()
 	call_deferred("_bind_entities")
+
+
+func _create_localized_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "LocalizedGameUI"
+	add_child(layer)
+	var ui_root := Control.new()
+	ui_root.name = "UIRoot"
+	ui_root.position = Vector2.ZERO
+	ui_root.size = VIEW_SIZE
+	ui_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui_root.theme = get_tree().root.theme
+	layer.add_child(ui_root)
+
+	_score_label = _add_ui_label(ui_root, "ScoreLabel", Vector2(304, 22), Vector2(300, 28), 18)
+	_win_condition_label = _add_ui_label(ui_root, "WinConditionLabel", Vector2(304, 52), Vector2(300, 24), 15)
+	_controls_hint_label = _add_ui_label(ui_root, "ControlsHintLabel", Vector2(24, 517), Vector2(912, 20), 14)
+	_add_ui_button(ui_root, "StartButton", START_BUTTON_KEY, Vector2(620, 22), Vector2(100, 36))
+	_add_ui_button(ui_root, "PauseButton", PAUSE_BUTTON_KEY, Vector2(724, 22), Vector2(100, 36))
+	_add_ui_button(ui_root, "RestartButton", RESTART_BUTTON_KEY, Vector2(828, 22), Vector2(104, 36))
+	_refresh_localized_text()
+
+
+func _add_ui_label(parent: Control, node_name: String, position: Vector2, size: Vector2, font_size: int) -> Label:
+	var label := Label.new()
+	label.name = node_name
+	label.position = position
+	label.size = size
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_color_override("font_color", Color(0.88, 0.94, 0.98, 1.0))
+	label.add_theme_font_size_override("font_size", font_size)
+	parent.add_child(label)
+	return label
+
+
+func _add_ui_button(parent: Control, node_name: String, translation_key: String, position: Vector2, size: Vector2) -> void:
+	var button := Button.new()
+	button.name = node_name
+	button.position = position
+	button.size = size
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override("font_size", 14)
+	button.add_theme_color_override("font_color", Color(0.92, 0.97, 0.99, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+	button.add_theme_stylebox_override("normal", _button_style(Color(0.10, 0.19, 0.25, 1.0)))
+	button.add_theme_stylebox_override("hover", _button_style(Color(0.14, 0.29, 0.34, 1.0)))
+	button.add_theme_stylebox_override("pressed", _button_style(Color(0.08, 0.15, 0.20, 1.0)))
+	button.add_theme_stylebox_override("focus", _button_style(Color(0.10, 0.19, 0.25, 1.0)))
+	button.text = _translate_text(translation_key)
+	parent.add_child(button)
+
+
+func _button_style(background: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background
+	style.border_color = Color(0.28, 0.50, 0.57, 1.0)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 5.0
+	style.content_margin_right = 5.0
+	return style
+
+
+func _translate_text(key: String, parameters: Dictionary = {}) -> String:
+	return TranslationServer.translate(StringName(key)).format(parameters)
+
+
+func _refresh_localized_text() -> void:
+	if _score_label == null:
+		return
+	var score := 0
+	var target := 3
+	if _player != null:
+		var properties: Dictionary = _player.get("properties")
+		score = int(properties.get("score", 0))
+		target = int(properties.get("win_target", 3))
+	_score_label.text = _translate_text(SCORE_TEXT_KEY, {"score": score})
+	_win_condition_label.text = _translate_text(WIN_CONDITION_KEY, {"target": target})
+	# This top-down scene has no jump action; the shared hint uses a dash for not applicable.
+	_controls_hint_label.text = _translate_text(CONTROLS_HINT_KEY, {"left": "←/↑", "right": "→/↓", "jump": "—"})
 
 
 func _bind_entities() -> void:
@@ -79,6 +169,7 @@ func _process(_delta: float) -> void:
 	for action in _actions_by_frame.get(_frame_index, []):
 		_apply_action(String(action))
 	_frame_index += 1
+	_refresh_localized_text()
 	queue_redraw()
 
 

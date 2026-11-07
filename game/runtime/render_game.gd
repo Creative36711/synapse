@@ -2,12 +2,13 @@ extends SceneTree
 
 const VIEW_SIZE := Vector2i(960, 540)
 const EntityInstance = preload("res://runtime/entity_instance.gd")
+const LocaleCatalog = preload("res://runtime/locale_catalog.gd")
 
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.size() not in [3, 4, 5]:
-		_emit_error("runtime.arguments.invalid", {"expected": [3, 4, 5], "actual": args.size()})
+	if args.size() not in [3, 4, 5, 7]:
+		_emit_error("runtime.arguments.invalid", {"expected": [3, 4, 5, 7], "actual": args.size()})
 		return
 	var frame_count_text := args[1]
 	if not frame_count_text.is_valid_int() or frame_count_text.to_int() < 1:
@@ -22,18 +23,36 @@ func _initialize() -> void:
 			return
 		entity_definitions = parsed_entities
 	var input_actions: Array = []
+	var explicit_input := false
+	var locale := "en"
 	if args.size() == 5:
+		var legacy_input_json := Marshalls.base64_to_raw(args[4]).get_string_from_utf8()
+		var legacy_input = JSON.parse_string(legacy_input_json)
+		if typeof(legacy_input) != TYPE_ARRAY:
+			_emit_error("runtime.arguments.invalid", {"expected": "input action array", "actual": typeof(legacy_input)})
+			return
+		input_actions = legacy_input
+		explicit_input = true
+	elif args.size() == 7:
 		var input_json := Marshalls.base64_to_raw(args[4]).get_string_from_utf8()
 		var parsed_input = JSON.parse_string(input_json)
 		if typeof(parsed_input) != TYPE_ARRAY:
 			_emit_error("runtime.arguments.invalid", {"expected": "input action array", "actual": typeof(parsed_input)})
 			return
 		input_actions = parsed_input
-	call_deferred("_render", args[0], frame_count_text.to_int(), args[2], entity_definitions, input_actions, args.size() == 5)
+		locale = String(args[5])
+		explicit_input = String(args[6]) == "true"
+	call_deferred("_render", args[0], frame_count_text.to_int(), args[2], entity_definitions, input_actions, explicit_input, locale)
 
 
-func _render(scene_path: String, frame_count: int, output_path: String, entity_definitions: Array, input_actions: Array, explicit_input: bool) -> void:
+func _render(scene_path: String, frame_count: int, output_path: String, entity_definitions: Array, input_actions: Array, explicit_input: bool, locale: String) -> void:
 	root.size = VIEW_SIZE
+	var localization := LocaleCatalog.install(locale)
+	if not bool(localization.get("ok", false)):
+		var missing_key := String(localization.get("key", "ui.minigame.score"))
+		_emit_error("locale.key.missing", {"path": "/locales/" + locale, "expected": missing_key, "actual": null, "locale": locale, "catalog": locale + ".json"})
+		return
+	root.theme = localization.get("theme")
 	var packed_scene := load(scene_path) as PackedScene
 	if packed_scene == null:
 		_emit_error("runtime.scene.load_failed", {"actual": scene_path})
