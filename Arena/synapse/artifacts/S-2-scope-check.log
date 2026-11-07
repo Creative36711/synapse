@@ -1,0 +1,19 @@
+Command: git diff --name-only b9a1ca01ff21343ca50512f595041ec247d0b6b9..HEAD; scope filter
+examples/locales/en.json
+examples/locales/ru.json
+examples/locales/zh-Hans.json
+locales/de.json
+locales/en.json
+locales/fr.json
+locales/ja.json
+locales/ko.json
+locales/pt-BR.json
+locales/ru.json
+locales/zh-Hans.json
+tests/i18n/catalogs.test.mjs
+tests/i18n/diagnostics.test.mjs
+tests/i18n/no-literals.test.mjs
+tools/i18n/README.md
+tools/i18n/check.mjs
+tools/i18n/no-literals.mjs
+RESULT: this card delta is within allowed paths.

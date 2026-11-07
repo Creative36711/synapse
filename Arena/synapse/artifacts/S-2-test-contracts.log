@@ -1,0 +1,611 @@
+Command: node --test tests/contracts/docs.test.mjs tests/contracts/error-registry.test.mjs tests/contracts/examples.test.mjs tests/contracts/package.test.mjs tests/contracts/schemas.test.mjs tests/contracts/yaml-loader.test.mjs
+TAP version 13
+# Subtest: документация контрактов
+    # Subtest: все документы контракта существуют
+    ok 1 - все документы контракта существуют
+      ---
+      duration_ms: 1.068325
+      type: 'test'
+      ...
+    # Subtest: README объясняет «почему YAML» и ссылается на схемы
+    ok 2 - README объясняет «почему YAML» и ссылается на схемы
+      ---
+      duration_ms: 0.50953
+      type: 'test'
+      ...
+    # Subtest: README фиксирует границы K-2 и честно называет то, чего K-2 не делает
+    ok 3 - README фиксирует границы K-2 и честно называет то, чего K-2 не делает
+      ---
+      duration_ms: 0.368065
+      type: 'test'
+      ...
+    # Subtest: документ GameSpec описывает смысловые ID и точку входа (INV-3)
+    ok 4 - документ GameSpec описывает смысловые ID и точку входа (INV-3)
+      ---
+      duration_ms: 0.295056
+      type: 'test'
+      ...
+    # Subtest: документ манифеста описывает зависимости, конфликты и диагностику цикла (INV-5)
+    ok 5 - документ манифеста описывает зависимости, конфликты и диагностику цикла (INV-5)
+      ---
+      duration_ms: 0.308193
+      type: 'test'
+      ...
+    # Subtest: документ ошибок задаёт params(path, expected, actual) и правило каталога
+    ok 6 - документ ошибок задаёт params(path, expected, actual) и правило каталога
+      ---
+      duration_ms: 0.296984
+      type: 'test'
+      ...
+    # Subtest: документ локализации перечисляет все восемь локалей
+    ok 7 - документ локализации перечисляет все восемь локалей
+      ---
+      duration_ms: 0.232555
+      type: 'test'
+      ...
+    # Subtest: запись решения содержит статус из допустимого набора
+    ok 8 - запись решения содержит статус из допустимого набора
+      ---
+      duration_ms: 0.454921
+      type: 'test'
+      ...
+    # Subtest: открытый вопрос в записи решения помечен как открытый
+    ok 9 - открытый вопрос в записи решения помечен как открытый
+      ---
+      duration_ms: 0.457795
+      type: 'test'
+      ...
+    # Subtest: в записи решения есть обратимые решения «неясно / решил / откат»
+    ok 10 - в записи решения есть обратимые решения «неясно / решил / откат»
+      ---
+      duration_ms: 0.581481
+      type: 'test'
+      ...
+    # Subtest: документы не требуют доступа к cortex (INV-1)
+    ok 11 - документы не требуют доступа к cortex (INV-1)
+      ---
+      duration_ms: 2.522767
+      type: 'test'
+      ...
+    1..11
+ok 1 - документация контрактов
+  ---
+  duration_ms: 8.682212
+  type: 'suite'
+  ...
+# Subtest: реестр кодов ошибок
+    # Subtest: реестр проходит собственную схему
+    ok 1 - реестр проходит собственную схему
+      ---
+      duration_ms: 67.974703
+      type: 'test'
+      ...
+    # Subtest: каталог сообщений фиксирует восемь локалей и en по умолчанию (INV-10)
+    ok 2 - каталог сообщений фиксирует восемь локалей и en по умолчанию (INV-10)
+      ---
+      duration_ms: 1.113676
+      type: 'test'
+      ...
+    # Subtest: коды уникальны и названы по шаблону
+    ok 3 - коды уникальны и названы по шаблону
+      ---
+      duration_ms: 0.361821
+      type: 'test'
+      ...
+    # Subtest: у каждого кода есть code, params(path, expected, actual) и ключ каталога
+    ok 4 - у каждого кода есть code, params(path, expected, actual) и ключ каталога
+      ---
+      duration_ms: 0.659926
+      type: 'test'
+      ...
+    # Subtest: код не хранит пользовательский текст, только ключ каталога (INV-9)
+    ok 5 - код не хранит пользовательский текст, только ключ каталога (INV-9)
+      ---
+      duration_ms: 0.386816
+      type: 'test'
+      ...
+    # Subtest: стадия проверки соответствует карточке, где она появляется
+    ok 6 - стадия проверки соответствует карточке, где она появляется
+      ---
+      duration_ms: 0.37167
+      type: 'test'
+      ...
+    # Subtest: минимальный обязательный набор кодов присутствует
+    ok 7 - минимальный обязательный набор кодов присутствует
+      ---
+      duration_ms: 0.26158
+      type: 'test'
+      ...
+    # Subtest: цикл модулей — ошибка, а не предупреждение (INV-5)
+    ok 8 - цикл модулей — ошибка, а не предупреждение (INV-5)
+      ---
+      duration_ms: 0.237696
+      type: 'test'
+      ...
+    # Subtest: реестр и docs/contracts/errors.md описывают один и тот же набор кодов
+    ok 9 - реестр и docs/contracts/errors.md описывают один и тот же набор кодов
+      ---
+      duration_ms: 0.67253
+      type: 'test'
+      ...
+    1..9
+ok 2 - реестр кодов ошибок
+  ---
+  duration_ms: 73.469581
+  type: 'suite'
+  ...
+# Subtest: контрактные примеры
+    # Subtest: gamespec: есть и валидные, и невалидные примеры
+    ok 1 - gamespec: есть и валидные, и невалидные примеры
+      ---
+      duration_ms: 2.152241
+      type: 'test'
+      ...
+    # Subtest: gamespec: валидный пример schema/examples/gamespec/minimal.valid.yaml проходит
+    ok 2 - gamespec: валидный пример schema/examples/gamespec/minimal.valid.yaml проходит
+      ---
+      duration_ms: 7.772945
+      type: 'test'
+      ...
+    # Subtest: gamespec: валидный пример schema/examples/gamespec/full.valid.yaml проходит
+    ok 3 - gamespec: валидный пример schema/examples/gamespec/full.valid.yaml проходит
+      ---
+      duration_ms: 5.329059
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/unknown-field.yaml падает с field.unknown
+    ok 4 - gamespec: schema/examples/gamespec/invalid/unknown-field.yaml падает с field.unknown
+      ---
+      duration_ms: 1.351609
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/wrong-type.yaml падает с field.type
+    ok 5 - gamespec: schema/examples/gamespec/invalid/wrong-type.yaml падает с field.type
+      ---
+      duration_ms: 0.886985
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/missing-spec-version.yaml падает с field.required
+    ok 6 - gamespec: schema/examples/gamespec/invalid/missing-spec-version.yaml падает с field.required
+      ---
+      duration_ms: 0.773106
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/bad-game-id.yaml падает с field.pattern
+    ok 7 - gamespec: schema/examples/gamespec/invalid/bad-game-id.yaml падает с field.pattern
+      ---
+      duration_ms: 0.777027
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/bad-version.yaml падает с field.pattern
+    ok 8 - gamespec: schema/examples/gamespec/invalid/bad-version.yaml падает с field.pattern
+      ---
+      duration_ms: 0.943778
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/unsupported-locale.yaml падает с field.enum
+    ok 9 - gamespec: schema/examples/gamespec/invalid/unsupported-locale.yaml падает с field.enum
+      ---
+      duration_ms: 1.067668
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/duplicate-locale.yaml падает с field.unique
+    ok 10 - gamespec: schema/examples/gamespec/invalid/duplicate-locale.yaml падает с field.unique
+      ---
+      duration_ms: 1.502499
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/duplicate-key.yaml падает с yaml.duplicate-key
+    ok 11 - gamespec: schema/examples/gamespec/invalid/duplicate-key.yaml падает с yaml.duplicate-key
+      ---
+      duration_ms: 1.557502
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/syntax.yaml падает с yaml.syntax
+    ok 12 - gamespec: schema/examples/gamespec/invalid/syntax.yaml падает с yaml.syntax
+      ---
+      duration_ms: 0.752131
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/entity-mutable-state.yaml падает с field.unknown
+    ok 13 - gamespec: schema/examples/gamespec/invalid/entity-mutable-state.yaml падает с field.unknown
+      ---
+      duration_ms: 1.062246
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/entity-properties-nested.yaml падает с field.type
+    ok 14 - gamespec: schema/examples/gamespec/invalid/entity-properties-nested.yaml падает с field.type
+      ---
+      duration_ms: 1.1941
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/entity-bad-id.yaml падает с field.pattern
+    ok 15 - gamespec: schema/examples/gamespec/invalid/entity-bad-id.yaml падает с field.pattern
+      ---
+      duration_ms: 0.854387
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/entity-missing-properties.yaml падает с field.required
+    ok 16 - gamespec: schema/examples/gamespec/invalid/entity-missing-properties.yaml падает с field.required
+      ---
+      duration_ms: 0.668001
+      type: 'test'
+      ...
+    # Subtest: gamespec: schema/examples/gamespec/invalid/entities-wrong-type.yaml падает с field.type
+    ok 17 - gamespec: schema/examples/gamespec/invalid/entities-wrong-type.yaml падает с field.type
+      ---
+      duration_ms: 0.642096
+      type: 'test'
+      ...
+    # Subtest: module-manifest: есть и валидные, и невалидные примеры
+    ok 18 - module-manifest: есть и валидные, и невалидные примеры
+      ---
+      duration_ms: 0.062317
+      type: 'test'
+      ...
+    # Subtest: module-manifest: валидный пример schema/examples/module-manifest/minimal.valid.yaml проходит
+    ok 19 - module-manifest: валидный пример schema/examples/module-manifest/minimal.valid.yaml проходит
+      ---
+      duration_ms: 1.461207
+      type: 'test'
+      ...
+    # Subtest: module-manifest: валидный пример schema/examples/module-manifest/full.valid.yaml проходит
+    ok 20 - module-manifest: валидный пример schema/examples/module-manifest/full.valid.yaml проходит
+      ---
+      duration_ms: 3.513616
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/unknown-field.yaml падает с field.unknown
+    ok 21 - module-manifest: schema/examples/module-manifest/invalid/unknown-field.yaml падает с field.unknown
+      ---
+      duration_ms: 1.083162
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/wrong-type.yaml падает с field.type
+    ok 22 - module-manifest: schema/examples/module-manifest/invalid/wrong-type.yaml падает с field.type
+      ---
+      duration_ms: 0.842212
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/missing-requires.yaml падает с field.required
+    ok 23 - module-manifest: schema/examples/module-manifest/invalid/missing-requires.yaml падает с field.required
+      ---
+      duration_ms: 0.63414
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/bad-module-id.yaml падает с field.pattern
+    ok 24 - module-manifest: schema/examples/module-manifest/invalid/bad-module-id.yaml падает с field.pattern
+      ---
+      duration_ms: 0.925719
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/bad-range.yaml падает с field.pattern
+    ok 25 - module-manifest: schema/examples/module-manifest/invalid/bad-range.yaml падает с field.pattern
+      ---
+      duration_ms: 0.797762
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/bad-spec-version.yaml падает с field.enum
+    ok 26 - module-manifest: schema/examples/module-manifest/invalid/bad-spec-version.yaml падает с field.enum
+      ---
+      duration_ms: 0.824432
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/duplicate-scene.yaml падает с field.unique
+    ok 27 - module-manifest: schema/examples/module-manifest/invalid/duplicate-scene.yaml падает с field.unique
+      ---
+      duration_ms: 0.821154
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/conflict-without-reason.yaml падает с field.required
+    ok 28 - module-manifest: schema/examples/module-manifest/invalid/conflict-without-reason.yaml падает с field.required
+      ---
+      duration_ms: 0.836613
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/scene-entry-unknown-field.yaml падает с field.unknown
+    ok 29 - module-manifest: schema/examples/module-manifest/invalid/scene-entry-unknown-field.yaml падает с field.unknown
+      ---
+      duration_ms: 0.941319
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/scene-entry-missing-resource.yaml падает с field.required
+    ok 30 - module-manifest: schema/examples/module-manifest/invalid/scene-entry-missing-resource.yaml падает с field.required
+      ---
+      duration_ms: 0.836544
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/scene-resource-absolute.yaml падает с field.pattern
+    ok 31 - module-manifest: schema/examples/module-manifest/invalid/scene-resource-absolute.yaml падает с field.pattern
+      ---
+      duration_ms: 0.865153
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/scene-resource-dotdot.yaml падает с field.pattern
+    ok 32 - module-manifest: schema/examples/module-manifest/invalid/scene-resource-dotdot.yaml падает с field.pattern
+      ---
+      duration_ms: 0.890192
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/scene-resource-not-tscn.yaml падает с field.pattern
+    ok 33 - module-manifest: schema/examples/module-manifest/invalid/scene-resource-not-tscn.yaml падает с field.pattern
+      ---
+      duration_ms: 0.946873
+      type: 'test'
+      ...
+    # Subtest: module-manifest: schema/examples/module-manifest/invalid/duplicate-scene-entry.yaml падает с field.unique
+    ok 34 - module-manifest: schema/examples/module-manifest/invalid/duplicate-scene-entry.yaml падает с field.unique
+      ---
+      duration_ms: 0.973843
+      type: 'test'
+      ...
+    # Subtest: error-registry: есть и валидные, и невалидные примеры
+    ok 35 - error-registry: есть и валидные, и невалидные примеры
+      ---
+      duration_ms: 0.070339
+      type: 'test'
+      ...
+    # Subtest: error-registry: валидный пример schema/error-registry.json проходит
+    ok 36 - error-registry: валидный пример schema/error-registry.json проходит
+      ---
+      duration_ms: 2.485254
+      type: 'test'
+      ...
+    # Subtest: error-registry: schema/examples/error-registry/invalid/missing-base-param.json падает с field.required
+    ok 37 - error-registry: schema/examples/error-registry/invalid/missing-base-param.json падает с field.required
+      ---
+      duration_ms: 0.349439
+      type: 'test'
+      ...
+    # Subtest: error-registry: schema/examples/error-registry/invalid/unknown-stage.json падает с field.enum
+    ok 38 - error-registry: schema/examples/error-registry/invalid/unknown-stage.json падает с field.enum
+      ---
+      duration_ms: 0.973818
+      type: 'test'
+      ...
+    # Subtest: error-registry: schema/examples/error-registry/invalid/message-field.json падает с field.unknown
+    ok 39 - error-registry: schema/examples/error-registry/invalid/message-field.json падает с field.unknown
+      ---
+      duration_ms: 0.241672
+      type: 'test'
+      ...
+    # Subtest: каждый код стадии K-2 подтверждён хотя бы одним примером
+    ok 40 - каждый код стадии K-2 подтверждён хотя бы одним примером
+      ---
+      duration_ms: 0.504057
+      type: 'test'
+      ...
+    # Subtest: невалидные примеры не проходят молча и по правильной причине
+    ok 41 - невалидные примеры не проходят молча и по правильной причине
+      ---
+      duration_ms: 105.859517
+      type: 'test'
+      ...
+    1..41
+ok 3 - контрактные примеры
+  ---
+  duration_ms: 159.450005
+  type: 'suite'
+  ...
+# Subtest: пакет проверки контрактов
+    # Subtest: runtime-зависимостей нет (INV-1)
+    ok 1 - runtime-зависимостей нет (INV-1)
+      ---
+      duration_ms: 1.450782
+      type: 'test'
+      ...
+    # Subtest: версии зависимостей зафиксированы точно, без диапазонов
+    ok 2 - версии зависимостей зафиксированы точно, без диапазонов
+      ---
+      duration_ms: 0.317842
+      type: 'test'
+      ...
+    # Subtest: lockfile есть и совпадает с package.json
+    ok 3 - lockfile есть и совпадает с package.json
+      ---
+      duration_ms: 0.347827
+      type: 'test'
+      ...
+    # Subtest: лицензия пакета согласована с MIT-ядром (INV-8)
+    ok 4 - лицензия пакета согласована с MIT-ядром (INV-8)
+      ---
+      duration_ms: 0.134532
+      type: 'test'
+      ...
+    # Subtest: проверка запускается одной командой и не прячет шаги в хуках
+    ok 5 - проверка запускается одной командой и не прячет шаги в хуках
+      ---
+      duration_ms: 0.170484
+      type: 'test'
+      ...
+    # Subtest: node_modules не попадает в Git
+    ok 6 - node_modules не попадает в Git
+      ---
+      duration_ms: 0.198728
+      type: 'test'
+      ...
+    1..6
+ok 4 - пакет проверки контрактов
+  ---
+  duration_ms: 3.863982
+  type: 'suite'
+  ...
+# Subtest: схемы контрактов
+    # Subtest: gamespec: схема объявляет диалект JSON Schema 2020-12
+    ok 1 - gamespec: схема объявляет диалект JSON Schema 2020-12
+      ---
+      duration_ms: 1.164771
+      type: 'test'
+      ...
+    # Subtest: gamespec: $id нерезолвируемый, чтобы проверка не ходила в сеть
+    ok 2 - gamespec: $id нерезолвируемый, чтобы проверка не ходила в сеть
+      ---
+      duration_ms: 0.387789
+      type: 'test'
+      ...
+    # Subtest: gamespec: все $ref внутренние
+    ok 3 - gamespec: все $ref внутренние
+      ---
+      duration_ms: 0.597837
+      type: 'test'
+      ...
+    # Subtest: gamespec: схема компилируется в строгом режиме Ajv
+    ok 4 - gamespec: схема компилируется в строгом режиме Ajv
+      ---
+      duration_ms: 61.636937
+      type: 'test'
+      ...
+    # Subtest: module-manifest: схема объявляет диалект JSON Schema 2020-12
+    ok 5 - module-manifest: схема объявляет диалект JSON Schema 2020-12
+      ---
+      duration_ms: 0.416276
+      type: 'test'
+      ...
+    # Subtest: module-manifest: $id нерезолвируемый, чтобы проверка не ходила в сеть
+    ok 6 - module-manifest: $id нерезолвируемый, чтобы проверка не ходила в сеть
+      ---
+      duration_ms: 0.324458
+      type: 'test'
+      ...
+    # Subtest: module-manifest: все $ref внутренние
+    ok 7 - module-manifest: все $ref внутренние
+      ---
+      duration_ms: 0.268076
+      type: 'test'
+      ...
+    # Subtest: module-manifest: схема компилируется в строгом режиме Ajv
+    ok 8 - module-manifest: схема компилируется в строгом режиме Ajv
+      ---
+      duration_ms: 40.132145
+      type: 'test'
+      ...
+    # Subtest: error-registry: схема объявляет диалект JSON Schema 2020-12
+    ok 9 - error-registry: схема объявляет диалект JSON Schema 2020-12
+      ---
+      duration_ms: 0.457588
+      type: 'test'
+      ...
+    # Subtest: error-registry: $id нерезолвируемый, чтобы проверка не ходила в сеть
+    ok 10 - error-registry: $id нерезолвируемый, чтобы проверка не ходила в сеть
+      ---
+      duration_ms: 0.53477
+      type: 'test'
+      ...
+    # Subtest: error-registry: все $ref внутренние
+    ok 11 - error-registry: все $ref внутренние
+      ---
+      duration_ms: 0.209327
+      type: 'test'
+      ...
+    # Subtest: error-registry: схема компилируется в строгом режиме Ajv
+    ok 12 - error-registry: схема компилируется в строгом режиме Ajv
+      ---
+      duration_ms: 28.999068
+      type: 'test'
+      ...
+    # Subtest: GameSpec требует обязательные поля контракта
+    ok 13 - GameSpec требует обязательные поля контракта
+      ---
+      duration_ms: 1.259418
+      type: 'test'
+      ...
+    # Subtest: манифест модуля требует версию модуля, зависимости и конфликты
+    ok 14 - манифест модуля требует версию модуля, зависимости и конфликты
+      ---
+      duration_ms: 0.677545
+      type: 'test'
+      ...
+    # Subtest: определения не допускают изменяемого состояния экземпляра (INV-4)
+    ok 15 - определения не допускают изменяемого состояния экземпляра (INV-4)
+      ---
+      duration_ms: 0.874757
+      type: 'test'
+      ...
+    # Subtest: общие определения GameSpec и манифеста не расходятся
+    ok 16 - общие определения GameSpec и манифеста не расходятся
+      ---
+      duration_ms: 0.409798
+      type: 'test'
+      ...
+    # Subtest: схема реестра ошибок запрещает хранить пользовательский текст
+    ok 17 - схема реестра ошибок запрещает хранить пользовательский текст
+      ---
+      duration_ms: 0.268919
+      type: 'test'
+      ...
+    1..17
+ok 5 - схемы контрактов
+  ---
+  duration_ms: 140.309352
+  type: 'suite'
+  ...
+# Subtest: чтение YAML
+    # Subtest: повтор ключа на верхнем уровне запрещён
+    ok 1 - повтор ключа на верхнем уровне запрещён
+      ---
+      duration_ms: 7.95719
+      type: 'test'
+      ...
+    # Subtest: повтор ключа во вложенном отображении запрещён
+    ok 2 - повтор ключа во вложенном отображении запрещён
+      ---
+      duration_ms: 1.412271
+      type: 'test'
+      ...
+    # Subtest: повтор ключа внутри элемента последовательности запрещён
+    ok 3 - повтор ключа внутри элемента последовательности запрещён
+      ---
+      duration_ms: 1.2671
+      type: 'test'
+      ...
+    # Subtest: синтаксическая ошибка даёт yaml.syntax, а не молчаливый null
+    ok 4 - синтаксическая ошибка даёт yaml.syntax, а не молчаливый null
+      ---
+      duration_ms: 1.986611
+      type: 'test'
+      ...
+    # Subtest: YAML 1.2 core: нет неявных дат, «yes/no» не становятся булевыми
+    ok 5 - YAML 1.2 core: нет неявных дат, «yes/no» не становятся булевыми
+      ---
+      duration_ms: 1.021557
+      type: 'test'
+      ...
+    # Subtest: merge-ключ << не раскрывается: контракт не наследует YAML 1.1
+    ok 6 - merge-ключ << не раскрывается: контракт не наследует YAML 1.1
+      ---
+      duration_ms: 3.089159
+      type: 'test'
+      ...
+    # Subtest: якорь и алиас читаются как обычное значение
+    ok 7 - якорь и алиас читаются как обычное значение
+      ---
+      duration_ms: 0.660495
+      type: 'test'
+      ...
+    # Subtest: пустой документ — null, а не исключение: тип ловит схема
+    ok 8 - пустой документ — null, а не исключение: тип ловит схема
+      ---
+      duration_ms: 0.452907
+      type: 'test'
+      ...
+    # Subtest: YAML-примеры читаются в JSON-совместимые значения
+    ok 9 - YAML-примеры читаются в JSON-совместимые значения
+      ---
+      duration_ms: 23.556914
+      type: 'test'
+      ...
+    1..9
+ok 6 - чтение YAML
+  ---
+  duration_ms: 43.048327
+  type: 'suite'
+  ...
+1..6
+# tests 93
+# suites 6
+# pass 93
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1366.971715
