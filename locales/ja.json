@@ -15,5 +15,17 @@
   "errors.module.version.unsatisfied": "パス {path} において、制約 {constraint} を満たすバージョンがありません。利用可能なバージョン: {available}。",
   "errors.module.conflict": "モジュール {conflictId} はパス {path} で選択されたビルドと競合します（制約 {constraint}）。",
   "errors.ref.unresolved": "選択されたモジュールは、パス {path} の {refKind} {actual} を提供していません。",
-  "errors.cli.usage": "使い方: validate|resolve <GameSpec のパス>"
+  "errors.cli.usage": "使い方: validate|resolve <GameSpec のパス>",
+  "errors.scene.entry.unknown": "パス {path} のシーン {actual} は登録されていません。次のいずれかを指定してください: {expected}。",
+  "errors.scene.duplicate": "パス {path} でシーン ID {actual} が重複して登録されています。",
+  "errors.scene.resource.missing": "パス {path} にシーンリソース {actual} がありません。",
+  "errors.spec.file.missing": "パス {path} の仕様ファイル {file} を読み込めません。期待値: {expected}、実際: {actual}。",
+  "errors.runtime.engine.missing": "パス {path} で実行エンジン {engine} を利用できません。期待値: {expected}、実際: {actual}。",
+  "errors.cli.dependency.node-missing": "パス {path} で CLI 依存関係 {dependency} を利用できません。必要なバージョン: {requiredVersion}、実際: {actual}。",
+  "ui.minigame.score": "スコア: {score}",
+  "ui.minigame.win_condition": "{target} 点に到達すると勝利です。",
+  "ui.minigame.controls_hint": "移動: {left}/{right}、ジャンプ: {jump}。",
+  "ui.minigame.button.start": "開始",
+  "ui.minigame.button.pause": "一時停止",
+  "ui.minigame.button.restart": "リスタート"
 }

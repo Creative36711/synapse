@@ -1,0 +1,21 @@
+Command: npm run i18n-check
+
+> synapse-contracts@0.1.0 i18n-check
+> node tools/i18n/check.mjs
+
+i18n-check: locales=8 base-keys=29 threshold=95.0%
+i18n-check: en 29/29 100.0% missing=[none]
+i18n-check: ru 29/29 100.0% missing=[none]
+i18n-check: zh-Hans 29/29 100.0% missing=[none]
+i18n-check: ja 29/29 100.0% missing=[none]
+i18n-check: pt-BR 29/29 100.0% missing=[none]
+i18n-check: de 29/29 100.0% missing=[none]
+i18n-check: fr 29/29 100.0% missing=[none]
+i18n-check: ko 29/29 100.0% missing=[none]
+i18n-check: ok
+i18n-check: examples locales=3 base-keys=14 threshold=100.0%
+i18n-check: examples en 14/14 100.0% missing=[none]
+i18n-check: examples ru 14/14 100.0% missing=[none]
+i18n-check: examples zh-Hans 14/14 100.0% missing=[none]
+i18n-check: examples ok
+i18n-check: overall ok

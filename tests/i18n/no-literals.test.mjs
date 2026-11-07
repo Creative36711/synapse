@@ -137,3 +137,58 @@ test('comments are not treated as executable UI or CLI output', () => withProjec
   fixture(projectRoot, 'cli/entry.mjs', '// console.log("comment only")\n/* process.stdout.write("comment only") */\n');
   assert.deepEqual(findUserFacingLiterals(projectRoot).violations, []);
 }));
+
+test('all supported display properties are detected in GDScript and scene resources', () => withProject((projectRoot) => {
+  const properties = ['text', 'tooltip_text', 'placeholder_text', 'window_title', 'title'];
+  fixture(projectRoot, 'game/ui/hud.gd', [
+    'extends Control',
+    'func _ready():',
+    ...properties.map((property) => `    self.${property} = "Literal ${property}"`),
+    '',
+  ].join('\n'));
+  fixture(projectRoot, 'game/ui/hud.tscn', [
+    '[gd_scene load_steps=1 format=3]',
+    '[node name="HUD" type="Control"]',
+    ...properties.map((property) => `${property} = "Literal ${property}"`),
+    '',
+  ].join('\n'));
+
+  const report = findUserFacingLiterals(projectRoot);
+  assert.equal(report.violations.length, 10, JSON.stringify(report.violations));
+  for (const property of properties) {
+    assert.equal(report.violations.filter((violation) => violation.property === property).length, 2, property);
+  }
+  const result = runChecker(projectRoot);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout, /literal in display property placeholder_text/);
+  assert.match(result.stdout, /literal in display property window_title/);
+}));
+
+test('localized GDScript assignments and empty serialized display properties pass', () => withProject((projectRoot) => {
+  fixture(projectRoot, 'game/ui/hud.gd', [
+    'extends Control',
+    'func _ready():',
+    '    self.text = tr("ui.minigame.score")',
+    '    self.tooltip_text = tr("ui.minigame.controls_hint")',
+    '    self.placeholder_text = tr("ui.minigame.win_condition")',
+    '    self.window_title = tr("game.example_minimal.title")',
+    '    self.title = tr("ui.minigame.button.start")',
+    '',
+  ].join('\n'));
+  fixture(projectRoot, 'game/ui/hud.tscn', [
+    '[gd_scene load_steps=1 format=3]',
+    '[node name="HUD" type="Control"]',
+    'text = ""',
+    'tooltip_text = ""',
+    'placeholder_text = ""',
+    'window_title = ""',
+    'title = ""',
+    '',
+  ].join('\n'));
+
+  const report = findUserFacingLiterals(projectRoot);
+  assert.deepEqual(report.violations, []);
+  const result = runChecker(projectRoot);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /user-facing-literals=0/);
+}));

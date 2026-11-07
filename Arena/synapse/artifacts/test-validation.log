@@ -1,0 +1,114 @@
+$ env PATH=/tmp/synapse-godot/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games node --test tests/validation/validator.test.mjs
+TAP version 13
+# Subtest: GameSpec local validator public CLI
+    # Subtest: minimal valid GameSpec returns machine-readable ok and documented defaults
+    ok 1 - minimal valid GameSpec returns machine-readable ok and documented defaults
+      ---
+      duration_ms: 447.865309
+      type: 'test'
+      ...
+    # Subtest: the standalone broken example reports a useful structural diagnostic
+    ok 2 - the standalone broken example reports a useful structural diagnostic
+      ---
+      duration_ms: 448.356349
+      type: 'test'
+      ...
+    # Subtest: wrong-type.game.yaml is rejected through validate with field.type at /game/version
+    ok 3 - wrong-type.game.yaml is rejected through validate with field.type at /game/version
+      ---
+      duration_ms: 356.007217
+      type: 'test'
+      ...
+    # Subtest: missing-field.game.yaml is rejected through validate with field.required at /specVersion
+    ok 4 - missing-field.game.yaml is rejected through validate with field.required at /specVersion
+      ---
+      duration_ms: 451.814033
+      type: 'test'
+      ...
+    # Subtest: unknown-field.game.yaml is rejected through validate with field.unknown at /game/genre
+    ok 5 - unknown-field.game.yaml is rejected through validate with field.unknown at /game/genre
+      ---
+      duration_ms: 475.674278
+      type: 'test'
+      ...
+    # Subtest: mutable-state.game.yaml is rejected through validate with definition.state.forbidden at /game/state
+    ok 6 - mutable-state.game.yaml is rejected through validate with definition.state.forbidden at /game/state
+      ---
+      duration_ms: 360.844709
+      type: 'test'
+      ...
+    # Subtest: bad-game-id.game.yaml is rejected through validate with field.pattern at /game/id
+    ok 7 - bad-game-id.game.yaml is rejected through validate with field.pattern at /game/id
+      ---
+      duration_ms: 362.980827
+      type: 'test'
+      ...
+    # Subtest: bad-scene-id.game.yaml is rejected through validate with field.pattern at /entry/scene
+    ok 8 - bad-scene-id.game.yaml is rejected through validate with field.pattern at /entry/scene
+      ---
+      duration_ms: 354.829748
+      type: 'test'
+      ...
+    # Subtest: bad-locale.game.yaml is rejected through validate with field.enum at /locales/supported/1
+    ok 9 - bad-locale.game.yaml is rejected through validate with field.enum at /locales/supported/1
+      ---
+      duration_ms: 353.885202
+      type: 'test'
+      ...
+    # Subtest: duplicate-locale.game.yaml is rejected through validate with field.unique at /locales/supported
+    ok 10 - duplicate-locale.game.yaml is rejected through validate with field.unique at /locales/supported
+      ---
+      duration_ms: 355.505135
+      type: 'test'
+      ...
+    # Subtest: default-not-supported.game.yaml is rejected through validate with field.enum at /locales/default
+    ok 11 - default-not-supported.game.yaml is rejected through validate with field.enum at /locales/default
+      ---
+      duration_ms: 452.820663
+      type: 'test'
+      ...
+    # Subtest: missing-locale-key.game.yaml is rejected through validate with locale.key.missing at /game/titleKey
+    ok 12 - missing-locale-key.game.yaml is rejected through validate with locale.key.missing at /game/titleKey
+      ---
+      duration_ms: 364.25629
+      type: 'test'
+      ...
+    # Subtest: duplicate-module.game.yaml is rejected through validate with module.duplicate at /modules/1/id
+    ok 13 - duplicate-module.game.yaml is rejected through validate with module.duplicate at /modules/1/id
+      ---
+      duration_ms: 361.921066
+      type: 'test'
+      ...
+    # Subtest: duplicate-key.game.yaml is rejected through validate with yaml.duplicate-key at /
+    ok 14 - duplicate-key.game.yaml is rejected through validate with yaml.duplicate-key at /
+      ---
+      duration_ms: 379.969583
+      type: 'test'
+      ...
+    # Subtest: yaml-syntax.game.yaml is rejected through validate with yaml.syntax at /
+    ok 15 - yaml-syntax.game.yaml is rejected through validate with yaml.syntax at /
+      ---
+      duration_ms: 378.002634
+      type: 'test'
+      ...
+    # Subtest: validate rejects the real cycle and reports the closed path per O-5
+    ok 16 - validate rejects the real cycle and reports the closed path per O-5
+      ---
+      duration_ms: 602.814358
+      type: 'test'
+      ...
+    1..16
+ok 1 - GameSpec local validator public CLI
+  ---
+  duration_ms: 6510.060724
+  type: 'suite'
+  ...
+1..1
+# tests 16
+# suites 1
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6608.738636

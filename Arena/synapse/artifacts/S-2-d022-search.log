@@ -1,0 +1,2 @@
+Command: git grep -nIE "https?://[^[:space:]]*cortex|github.com/[^[:space:]]*cortex|cortex.git" -- .
+RESULT: no cortex URLs or dependency references (grep rc=1, no matches)

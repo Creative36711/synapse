@@ -1,0 +1,119 @@
+$ node --test tests/i18n/catalogs.test.mjs tests/i18n/diagnostics.test.mjs tests/i18n/no-literals.test.mjs tests/i18n/runtime.test.mjs
+TAP version 13
+# Subtest: all eight production catalogs cover the complete diagnostic baseline
+ok 1 - all eight production catalogs cover the complete diagnostic baseline
+  ---
+  duration_ms: 5.769156
+  type: 'test'
+  ...
+# Subtest: missing keys remain visible in reports even when coverage passes the threshold
+ok 2 - missing keys remain visible in reports even when coverage passes the threshold
+  ---
+  duration_ms: 0.676032
+  type: 'test'
+  ...
+# Subtest: coverage below 95 percent fails without suppressing the missing-key list
+ok 3 - coverage below 95 percent fails without suppressing the missing-key list
+  ---
+  duration_ms: 0.472797
+  type: 'test'
+  ...
+# Subtest: incompatible translation parameters fail validation
+ok 4 - incompatible translation parameters fail validation
+  ---
+  duration_ms: 0.224966
+  type: 'test'
+  ...
+# Subtest: ja and de diagnostics preserve English code/params/order and localize only message
+ok 5 - ja and de diagnostics preserve English code/params/order and localize only message
+  ---
+  duration_ms: 552.57429
+  type: 'test'
+  ...
+# Subtest: usage diagnostics use the selected locale and unsupported locale falls back to en
+ok 6 - usage diagnostics use the selected locale and unsupported locale falls back to en
+  ---
+  duration_ms: 720.229622
+  type: 'test'
+  ...
+# Subtest: valid module graph validation output is byte-identical in en and de
+ok 7 - valid module graph validation output is byte-identical in en and de
+  ---
+  duration_ms: 608.295584
+  type: 'test'
+  ...
+# Subtest: a direct UI display-property assignment is reported and fails the CLI check
+ok 8 - a direct UI display-property assignment is reported and fails the CLI check
+  ---
+  duration_ms: 43.251187
+  type: 'test'
+  ...
+# Subtest: literal text in a Godot scene property is reported
+ok 9 - literal text in a Godot scene property is reported
+  ---
+  duration_ms: 45.848779
+  type: 'test'
+  ...
+# Subtest: set_text, Godot CLI output and engine diagnostic sinks reject direct user strings
+ok 10 - set_text, Godot CLI output and engine diagnostic sinks reject direct user strings
+  ---
+  duration_ms: 41.108241
+  type: 'test'
+  ...
+# Subtest: CLI stdout/stderr and console message literals are found in game and root cli sources
+ok 11 - CLI stdout/stderr and console message literals are found in game and root cli sources
+  ---
+  duration_ms: 41.210326
+  type: 'test'
+  ...
+# Subtest: localized display and CLI expressions pass; catalog keys and diagnostic codes remain technical
+ok 12 - localized display and CLI expressions pass; catalog keys and diagnostic codes remain technical
+  ---
+  duration_ms: 42.108903
+  type: 'test'
+  ...
+# Subtest: comments are not treated as executable UI or CLI output
+ok 13 - comments are not treated as executable UI or CLI output
+  ---
+  duration_ms: 2.37001
+  type: 'test'
+  ...
+# Subtest: runtime catalogs contain every declared locale and English is the default
+ok 14 - runtime catalogs contain every declared locale and English is the default
+  ---
+  duration_ms: 2.502724
+  type: 'test'
+  ...
+# Subtest: unsupported language selection falls back to the default English catalog
+ok 15 - unsupported language selection falls back to the default English catalog
+  ---
+  duration_ms: 0.181326
+  type: 'test'
+  ...
+# Subtest: diagnostic translation substitutes parameters without changing codes or params
+ok 16 - diagnostic translation substitutes parameters without changing codes or params
+  ---
+  duration_ms: 0.51271
+  type: 'test'
+  ...
+# Subtest: parameter interpolation serializes structured values deterministically
+ok 17 - parameter interpolation serializes structured values deterministically
+  ---
+  duration_ms: 0.145549
+  type: 'test'
+  ...
+# Subtest: a missing key in a supported locale is not silently replaced with English
+ok 18 - a missing key in a supported locale is not silently replaced with English
+  ---
+  duration_ms: 0.149576
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2342.561643

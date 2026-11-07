@@ -1,0 +1,3 @@
+Command: git rev-parse HEAD; git diff --exit-code HEAD; git status --short --untracked-files=no
+HEAD=ce777ba379bddd15247e7d213cbd12613038e250
+RESULT: tracked source tree clean; all evidence refers to this source commit.

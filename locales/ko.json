@@ -15,5 +15,17 @@
   "errors.module.version.unsatisfied": "{path}에서 제약 조건 {constraint}을(를) 만족하는 버전이 없습니다. 사용 가능한 버전: {available}.",
   "errors.module.conflict": "모듈 {conflictId}가 {path}에서 선택된 빌드와 충돌합니다 (제약 조건 {constraint}).",
   "errors.ref.unresolved": "선택된 모듈 중 어느 것도 {path}의 {refKind} {actual}을(를) 제공하지 않습니다.",
-  "errors.cli.usage": "사용법: validate|resolve <GameSpec 경로>"
+  "errors.cli.usage": "사용법: validate|resolve <GameSpec 경로>",
+  "errors.scene.entry.unknown": "{path}의 장면 {actual}이(가) 등록되지 않았습니다. 다음 중 하나가 필요합니다: {expected}.",
+  "errors.scene.duplicate": "{path}에서 장면 ID {actual}이(가) 중복 등록되었습니다.",
+  "errors.scene.resource.missing": "{path}에 장면 리소스 {actual}이(가) 없습니다.",
+  "errors.spec.file.missing": "{path}의 사양 파일 {file}을(를) 읽을 수 없습니다. 예상값: {expected}, 실제값: {actual}.",
+  "errors.runtime.engine.missing": "{path}에서 런타임 엔진 {engine}을(를) 사용할 수 없습니다. 예상값: {expected}, 실제값: {actual}.",
+  "errors.cli.dependency.node-missing": "{path}에서 CLI 종속성 {dependency}을(를) 사용할 수 없습니다. 필수 버전: {requiredVersion}, 실제값: {actual}.",
+  "ui.minigame.score": "점수: {score}",
+  "ui.minigame.win_condition": "승리하려면 {target}점을 달성하세요.",
+  "ui.minigame.controls_hint": "이동: {left}/{right}; 점프: {jump}.",
+  "ui.minigame.button.start": "시작",
+  "ui.minigame.button.pause": "일시 정지",
+  "ui.minigame.button.restart": "다시 시작"
 }

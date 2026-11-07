@@ -1,0 +1,14 @@
+i18n-check	0
+i18n-no-literals	0
+test-i18n	0
+check-contracts	0
+test-contracts	0
+test-validation	0
+test-modules	0
+test-cli	0
+test-deps	0
+node-check	0
+diff-check	0
+scope-check	0	Only allowed directories changed
+D-022-link-search	1	Expected no-match result; no cortex URL/dependency found
+GitHub-i18n-check	0	PR #25 i18n workflow pass at tested source SHA

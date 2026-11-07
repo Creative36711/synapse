@@ -1,5 +1,16 @@
 {
   "game.example_minimal.title": "Minimal example game",
   "game.example_cycle.title": "Cycle fixture game",
-  "game.example_state_motion.title": "Animated state example"
+  "game.example_state_motion.title": "Animated state example",
+  "game.example_broken.title": "Broken example game",
+  "game.synapse_demo_garden.title": "Garden demo",
+  "game.synapse_demo_garden.description": "A small garden with movable objects.",
+  "entity.garden.player.name": "Gardener",
+  "entity.garden.crate.name": "Seed crate",
+  "ui.minigame.score": "Score: {score}",
+  "ui.minigame.win_condition": "Reach {target} points to win.",
+  "ui.minigame.controls_hint": "Move: {left}/{right}; jump: {jump}.",
+  "ui.minigame.button.start": "Start",
+  "ui.minigame.button.pause": "Pause",
+  "ui.minigame.button.restart": "Restart"
 }

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -337,6 +338,91 @@ test('state-motion fingerprint is byte-identical for --lang en and --lang de at 
   }));
 });
 
+test('run resolves a module scene entry and instantiates GameSpec entities from copied properties', { timeout: 120_000 }, () => {
+  const buildDir = mkdtempSync(join(tmpdir(), 'synapse-s3-module-run-'));
+  try {
+    const gameDir = join(buildDir, 'module-scene');
+    const modulesDir = join(gameDir, 'modules');
+    const localesDir = join(gameDir, 'locales');
+    mkdirSync(modulesDir, { recursive: true });
+    mkdirSync(localesDir, { recursive: true });
+    copyFileSync(join(REPO_ROOT, 'examples/locales/en.json'), join(localesDir, 'en.json'));
+
+    const specPath = join(gameDir, 'module-scene.game.yaml');
+    const moduleManifestPath = join(modulesDir, 'scene.module.yaml');
+    const writeSpec = (entryScene) => writeFileSync(specPath, [
+      'specVersion: "1.0"',
+      'game:',
+      '  id: "example.modulescene"',
+      '  version: "0.1.0"',
+      '  titleKey: "game.example_minimal.title"',
+      'entry:',
+      `  scene: "${entryScene}"`,
+      'modules:',
+      '  - id: "synapse.test.runtimescene"',
+      '    version: "1.0.0"',
+      'entities:',
+      '  - id: "entity.player"',
+      '    properties:',
+      '      health: 100',
+      '      enabled: true',
+      '',
+    ].join('\n'));
+    writeFileSync(moduleManifestPath, [
+      'specVersion: "1.0"',
+      'module:',
+      '  id: "synapse.test.runtimescene"',
+      '  version: "1.0.0"',
+      '  titleKey: "module.synapse_test_runtime_scene.title"',
+      'requires:',
+      '  spec: "1.0"',
+      '  engine: "*"',
+      'provides:',
+      '  scenes: ["scene.test-author"]',
+      '  sceneEntries:',
+      '    - id: "scene.test-author"',
+      '      resource: "res://runtime/scenes/main_menu.tscn"',
+      '',
+    ].join('\n'));
+
+    writeSpec('scene.test-author');
+    const shotPath = join(buildDir, 'module-scene.png');
+    const statePath = join(buildDir, 'module-scene.state.json');
+    const result = runCli([
+      'run', specPath, '--frames', '1', '--shot', shotPath, '--state', statePath,
+    ]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const record = machineRecord(result.stdout);
+    assert.equal(record.code, 'cli.run.complete');
+    assert.equal(record.params.scene, 'scene.test-author');
+
+    const state = JSON.parse(readFileSync(statePath, 'utf8'));
+    const entityNode = state.nodes.children.find((child) => child.properties.entity_id === 'entity.player');
+    assert.ok(entityNode, 'runtime snapshot must contain the entity instance');
+    assert.deepEqual(entityNode.properties.entity_properties, { health: 100, enabled: true });
+
+    const mutableDefinition = readFileSync(specPath, 'utf8').replace('      health: 100', '      state: "mutable"');
+    writeFileSync(specPath, mutableDefinition);
+    const mutable = runCli(['validate', specPath]);
+    assert.equal(mutable.status, 1, `${mutable.stdout}\\n${mutable.stderr}`);
+    const stateError = machineRecord(mutable.stdout).errors[0];
+    assert.equal(stateError.code, 'definition.state.forbidden');
+    assert.equal(stateError.params.path, '/entities/0/properties/state');
+
+    writeSpec('scene.not-registered');
+    const unknown = runCli(['validate', specPath]);
+    assert.equal(unknown.status, 1, `${unknown.stdout}\n${unknown.stderr}`);
+    const diagnostic = machineRecord(unknown.stdout).errors[0];
+    assert.equal(diagnostic.code, 'scene.entry.unknown');
+    assert.equal(diagnostic.params.actual, 'scene.not-registered');
+    assert.deepEqual(diagnostic.params.expected, [
+      'scene.main-menu', 'scene.state-motion', 'scene.test-author',
+    ]);
+  } finally {
+    rmSync(buildDir, { recursive: true, force: true });
+  }
+});
+
 test('unknown semantic scene returns a machine-readable path/expected/actual error', { timeout: 60_000 }, () => {
   const fixtureDir = join(TEST_DIR, 'unknown-scene');
   mkdirSync(join(fixtureDir, 'locales'), { recursive: true });
@@ -354,8 +440,8 @@ test('unknown semantic scene returns a machine-readable path/expected/actual err
   ].join('\n'));
   const result = runCli(['run', specPath, '--frames', '1', '--shot', join(TEST_DIR, 'unknown.png')]);
   assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
-  const diagnostic = machineRecord(result.stdout);
-  assert.equal(diagnostic.code, 'scene.id.unknown');
+  const diagnostic = machineRecord(result.stdout).errors[0];
+  assert.equal(diagnostic.code, 'scene.entry.unknown');
   assert.equal(diagnostic.params.path, '/entry/scene');
   assert.deepEqual(diagnostic.params.expected, ['scene.main-menu', 'scene.state-motion']);
   assert.equal(diagnostic.params.actual, 'scene.not-registered');

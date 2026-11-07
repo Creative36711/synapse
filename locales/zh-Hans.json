@@ -15,5 +15,17 @@
   "errors.module.version.unsatisfied": "路径 {path} 上没有版本满足约束 {constraint}；可用版本：{available}。",
   "errors.module.conflict": "模块 {conflictId} 与所选构建冲突，位置：{path}（约束 {constraint}）。",
   "errors.ref.unresolved": "所选模块均未提供路径 {path} 上的 {refKind} {actual}。",
-  "errors.cli.usage": "用法：validate|resolve <GameSpec 路径>"
+  "errors.cli.usage": "用法：validate|resolve <GameSpec 路径>",
+  "errors.scene.entry.unknown": "路径 {path} 上的场景 {actual} 未注册；预期值之一为 {expected}。",
+  "errors.scene.duplicate": "路径 {path} 上的场景 ID {actual} 被重复注册。",
+  "errors.scene.resource.missing": "路径 {path} 上缺少场景资源 {actual}。",
+  "errors.spec.file.missing": "无法读取路径 {path} 上的规格文件 {file}；预期 {expected}，实际为 {actual}。",
+  "errors.runtime.engine.missing": "路径 {path} 上无法使用运行时引擎 {engine}；预期 {expected}，实际为 {actual}。",
+  "errors.cli.dependency.node-missing": "路径 {path} 上无法使用 CLI 依赖 {dependency}；需要 {requiredVersion}，实际为 {actual}。",
+  "ui.minigame.score": "得分：{score}",
+  "ui.minigame.win_condition": "达到 {target} 分即可获胜。",
+  "ui.minigame.controls_hint": "移动：{left}/{right}；跳跃：{jump}。",
+  "ui.minigame.button.start": "开始",
+  "ui.minigame.button.pause": "暂停",
+  "ui.minigame.button.restart": "重新开始"
 }

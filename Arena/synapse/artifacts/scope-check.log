@@ -1,0 +1,9 @@
+Command: git diff --name-only | forbidden path filter
+game/cli/main.gd
+game/modules/resolver.mjs
+game/runtime/render_game.gd
+game/validation/validator.mjs
+tests/cli/run.test.mjs
+tests/i18n/diagnostics.test.mjs
+tests/modules/resolver.test.mjs
+RESULT: no protected paths modified

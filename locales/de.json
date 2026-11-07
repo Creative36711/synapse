@@ -15,5 +15,17 @@
   "errors.module.version.unsatisfied": "Keine verfügbare Version erfüllt {constraint} unter {path}; verfügbar: {available}.",
   "errors.module.conflict": "Modul {conflictId} steht unter {path} im Konflikt mit dem ausgewählten Build (Einschränkung {constraint}).",
   "errors.ref.unresolved": "Kein ausgewähltes Modul stellt {refKind} {actual} unter {path} bereit.",
-  "errors.cli.usage": "Verwendung: validate|resolve <GameSpec-Pfad>"
+  "errors.cli.usage": "Verwendung: validate|resolve <GameSpec-Pfad>",
+  "errors.scene.entry.unknown": "Die Szene {actual} unter {path} ist nicht registriert; erwartet wird einer dieser Werte: {expected}.",
+  "errors.scene.duplicate": "Die Szenen-ID {actual} ist unter {path} mehrfach registriert.",
+  "errors.scene.resource.missing": "Die Szenenressource {actual} fehlt unter {path}.",
+  "errors.spec.file.missing": "Die Spezifikationsdatei {file} konnte unter {path} nicht gelesen werden; erwartet {expected}, erhalten {actual}.",
+  "errors.runtime.engine.missing": "Die Laufzeit-Engine {engine} ist unter {path} nicht verfügbar; erwartet {expected}, erhalten {actual}.",
+  "errors.cli.dependency.node-missing": "Die CLI-Abhängigkeit {dependency} ist unter {path} nicht verfügbar; benötigt {requiredVersion}, erhalten {actual}.",
+  "ui.minigame.score": "Punktzahl: {score}",
+  "ui.minigame.win_condition": "Erreiche {target} Punkte, um zu gewinnen.",
+  "ui.minigame.controls_hint": "Bewegen: {left}/{right}; springen: {jump}.",
+  "ui.minigame.button.start": "Start",
+  "ui.minigame.button.pause": "Pause",
+  "ui.minigame.button.restart": "Neu starten"
 }

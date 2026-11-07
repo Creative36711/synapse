@@ -7,6 +7,7 @@ const STATE_CAPTURE_ARG := "__capture_state"
 const STATE_FORMAT := "synapse.world-state.v1"
 const STATE_VIEW_SIZE := Vector2i(960, 540)
 const SceneRegistry = preload("res://runtime/scene_registry.gd")
+const EntityInstance = preload("res://runtime/entity_instance.gd")
 const MAX_RUN_FRAMES := 3600
 
 
@@ -41,6 +42,8 @@ func _initialize() -> void:
 
 	if args.size() >= 2 and args[0] in ["validate", "resolve"]:
 		args[1] = _absolute_spec_path(args[1])
+		args.append("--base-scenes")
+		args.append(",".join(SceneRegistry.SCENES.keys()))
 
 	var command := [ProjectSettings.globalize_path(helper_script)]
 	command.append_array(args)
@@ -122,7 +125,15 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 		_emit_error("cli.run.shot.directory_failed", {"path": "/--shot", "expected": {"directory_writable": true}, "actual": directory_error}, 1)
 		return
 
-	var validator_command := [ProjectSettings.globalize_path(VALIDATOR_SCRIPT), "validate", spec_path, "--locale", locale]
+	var validator_command := [
+		ProjectSettings.globalize_path(VALIDATOR_SCRIPT),
+		"validate",
+		spec_path,
+		"--base-scenes",
+		",".join(SceneRegistry.SCENES.keys()),
+		"--locale",
+		locale,
+	]
 	var validation_output: Array = []
 	var validation_exit := OS.execute("node", validator_command, validation_output, true)
 	var validation_result := _parse_json_output(validation_output)
@@ -133,12 +144,15 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 		return
 
 	var scene_id := String(validation_result.get("entryScene", ""))
-	var scene_path := String(SceneRegistry.SCENES.get(scene_id, ""))
+	var scene_registry := _build_scene_registry(validation_result.get("sceneEntries", []))
+	var scene_path := String(scene_registry.get(scene_id, ""))
 	if scene_path.is_empty():
-		var expected_scenes: Array = SceneRegistry.SCENES.keys()
+		var expected_scenes: Array = scene_registry.keys()
 		expected_scenes.sort()
-		_emit_error("scene.id.unknown", {"path": "/entry/scene", "expected": expected_scenes, "actual": scene_id}, 1)
+		_emit_error("scene.entry.unknown", {"path": "/entry/scene", "expected": expected_scenes, "actual": scene_id, "sceneId": scene_id}, 1)
 		return
+	var entity_definitions: Array = validation_result.get("entities", [])
+	var entity_payload := Marshalls.raw_to_base64(JSON.stringify(entity_definitions).to_utf8_buffer())
 
 	var renderer_command := [
 		"SYNAPSE_GODOT_MODE=offscreen",
@@ -151,6 +165,7 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 		scene_path,
 		str(frame_count),
 		shot_path,
+		entity_payload,
 	]
 	var renderer_output: Array = []
 	var renderer_exit := OS.execute("env", renderer_command, renderer_output, true)
@@ -162,13 +177,35 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 	if png_info.is_empty():
 		_emit_error("cli.run.png.invalid", {"path": "/--shot", "expected": {"format": "PNG", "width_minimum": 1, "height_minimum": 1}, "actual": shot_path}, 1)
 		return
-	if state_requested and not _write_world_state(scene_id, frame_count, state_path):
+	if state_requested and not _write_world_state(scene_id, scene_path, frame_count, state_path, entity_definitions):
 		return
 	var result := {}
 	result["code"] = "cli.run.complete"
 	result["params"] = {"scene": scene_id, "frames": frame_count, "shot": shot_path, "width": png_info.width, "height": png_info.height}
 	result["marker"] = "frames=%d" % frame_count
 	_emit_record(result, 0)
+
+
+func _build_scene_registry(scene_entries: Array) -> Dictionary:
+	var registry: Dictionary = SceneRegistry.SCENES.duplicate(true)
+	for entry in scene_entries:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var scene_id := String(entry.get("id", ""))
+		if scene_id.is_empty() or registry.has(scene_id):
+			continue
+		registry[scene_id] = String(entry.get("resource", ""))
+	return registry
+
+
+func _add_entity_instances(scene_root: Node, entity_definitions: Array) -> void:
+	for index in range(entity_definitions.size()):
+		var definition: Variant = entity_definitions[index]
+		if typeof(definition) != TYPE_DICTIONARY:
+			continue
+		var instance = EntityInstance.new(definition)
+		instance.name = "Entity_%d" % index
+		scene_root.add_child(instance)
 
 
 func _state_path_error(path: String, repo_root: String) -> String:
@@ -182,7 +219,7 @@ func _state_path_error(path: String, repo_root: String) -> String:
 	return ""
 
 
-func _write_world_state(scene_id: String, frame_count: int, state_path: String) -> bool:
+func _write_world_state(scene_id: String, scene_path: String, frame_count: int, state_path: String, entity_definitions: Array) -> bool:
 	var capture_command := [
 		"SYNAPSE_GODOT_MODE=offscreen",
 		"godot",
@@ -194,8 +231,10 @@ func _write_world_state(scene_id: String, frame_count: int, state_path: String) 
 		"--",
 		STATE_CAPTURE_ARG,
 		scene_id,
+		scene_path,
 		str(frame_count),
 		state_path,
+		Marshalls.raw_to_base64(JSON.stringify(entity_definitions).to_utf8_buffer()),
 	]
 	var capture_output: Array = []
 	var capture_exit := OS.execute("env", capture_command, capture_output, true)
@@ -213,12 +252,19 @@ func _write_world_state(scene_id: String, frame_count: int, state_path: String) 
 
 
 func _capture_world_state(args: PackedStringArray) -> void:
-	if args.size() != 3:
-		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"arguments": 3}, "actual": args.size()}, 1)
+	if args.size() != 5:
+		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"arguments": 5}, "actual": args.size()}, 1)
 		return
 	var scene_id := String(args[0])
-	var frame_text := String(args[1])
-	var state_path := String(args[2])
+	var scene_path := String(args[1])
+	var frame_text := String(args[2])
+	var state_path := String(args[3])
+	var entity_json := Marshalls.base64_to_raw(String(args[4])).get_string_from_utf8()
+	var parsed_entities = JSON.parse_string(entity_json)
+	if typeof(parsed_entities) != TYPE_ARRAY:
+		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"entities": "array"}, "actual": typeof(parsed_entities)}, 1)
+		return
+	var entity_definitions: Array = parsed_entities
 	if not frame_text.is_valid_int():
 		_emit_error("cli.run.state.capture_failed", {"path": "/--frames", "expected": {"type": "integer"}, "actual": frame_text}, 1)
 		return
@@ -232,9 +278,8 @@ func _capture_world_state(args: PackedStringArray) -> void:
 		_emit_error("cli.run.state.invalid", {"path": "/--state", "expected": {"absolute": true, "extension": ".json", "outside_repository": true}, "actual": state_path_error}, 2)
 		return
 	state_path = state_path.simplify_path()
-	var scene_path := String(SceneRegistry.SCENES.get(scene_id, ""))
 	if scene_path.is_empty():
-		_emit_error("cli.run.state.capture_failed", {"path": "/entry/scene", "expected": SceneRegistry.SCENES.keys(), "actual": scene_id}, 1)
+		_emit_error("cli.run.state.capture_failed", {"path": "/entry/scene", "expected": "resolved scene resource", "actual": scene_id}, 1)
 		return
 	var packed_scene := load(scene_path) as PackedScene
 	if packed_scene == null:
@@ -246,6 +291,7 @@ func _capture_world_state(args: PackedStringArray) -> void:
 		return
 	root.size = STATE_VIEW_SIZE
 	root.add_child(scene_root)
+	_add_entity_instances(scene_root, entity_definitions)
 	for _frame in range(frame_count):
 		await process_frame
 
@@ -310,6 +356,10 @@ func _snapshot_node(node: Node, scene_root: Node) -> Dictionary:
 			polygon_points.append(_vector2_array(point))
 		properties["color"] = _color_array(polygon_node.color)
 		properties["polygon"] = polygon_points
+	if node.has_method("runtime_entity_data"):
+		var entity_data: Dictionary = node.call("runtime_entity_data")
+		properties["entity_id"] = entity_data.get("id", "")
+		properties["entity_properties"] = entity_data.get("properties", {}).duplicate(true)
 	var children: Array = []
 	for child in node.get_children():
 		children.append(_snapshot_node(child, scene_root))

@@ -1,0 +1,16 @@
+{
+  "game.example_minimal.title": "Минимальная игра",
+  "game.example_cycle.title": "Пример с циклическими зависимостями",
+  "game.example_state_motion.title": "Пример с анимацией состояния",
+  "game.example_broken.title": "Сломанный пример игры",
+  "game.synapse_demo_garden.title": "Сад",
+  "game.synapse_demo_garden.description": "Небольшой сад с подвижными объектами.",
+  "entity.garden.player.name": "Садовник",
+  "entity.garden.crate.name": "Ящик с семенами",
+  "ui.minigame.score": "Счёт: {score}",
+  "ui.minigame.win_condition": "Наберите {target} очков, чтобы победить.",
+  "ui.minigame.controls_hint": "Движение: {left}/{right}; прыжок: {jump}.",
+  "ui.minigame.button.start": "Начать",
+  "ui.minigame.button.pause": "Пауза",
+  "ui.minigame.button.restart": "Заново"
+}

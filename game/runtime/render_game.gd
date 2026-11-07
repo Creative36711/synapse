@@ -1,21 +1,30 @@
 extends SceneTree
 
 const VIEW_SIZE := Vector2i(960, 540)
+const EntityInstance = preload("res://runtime/entity_instance.gd")
 
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
-	if args.size() != 3:
-		_emit_error("runtime.arguments.invalid", {"expected": 3, "actual": args.size()})
+	if args.size() not in [3, 4]:
+		_emit_error("runtime.arguments.invalid", {"expected": [3, 4], "actual": args.size()})
 		return
 	var frame_count_text := args[1]
 	if not frame_count_text.is_valid_int() or frame_count_text.to_int() < 1:
 		_emit_error("runtime.frames.invalid", {"expected": "positive integer", "actual": frame_count_text})
 		return
-	call_deferred("_render", args[0], frame_count_text.to_int(), args[2])
+	var entity_definitions: Array = []
+	if args.size() == 4:
+		var entity_json := Marshalls.base64_to_raw(args[3]).get_string_from_utf8()
+		var parsed_entities = JSON.parse_string(entity_json)
+		if typeof(parsed_entities) != TYPE_ARRAY:
+			_emit_error("runtime.arguments.invalid", {"expected": "entity definitions array", "actual": typeof(parsed_entities)})
+			return
+		entity_definitions = parsed_entities
+	call_deferred("_render", args[0], frame_count_text.to_int(), args[2], entity_definitions)
 
 
-func _render(scene_path: String, frame_count: int, output_path: String) -> void:
+func _render(scene_path: String, frame_count: int, output_path: String, entity_definitions: Array) -> void:
 	root.size = VIEW_SIZE
 	var packed_scene := load(scene_path) as PackedScene
 	if packed_scene == null:
@@ -26,6 +35,13 @@ func _render(scene_path: String, frame_count: int, output_path: String) -> void:
 		_emit_error("runtime.scene.instantiate_failed", {"actual": scene_path})
 		return
 	root.add_child(scene)
+	for index in range(entity_definitions.size()):
+		var definition: Variant = entity_definitions[index]
+		if typeof(definition) != TYPE_DICTIONARY:
+			continue
+		var entity_instance = EntityInstance.new(definition)
+		entity_instance.name = "Entity_%d" % index
+		scene.add_child(entity_instance)
 	var processed_frames := 0
 	while processed_frames < frame_count:
 		await process_frame

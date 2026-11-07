@@ -1,0 +1,87 @@
+Command: env PATH=/tmp/synapse-godot/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games GODOT_BIN=/tmp/synapse-godot/bin/godot node --test tests/cli/run.test.mjs
+TAP version 13
+# K-39 60/120 state comparison: 60=1631b8305641710d0462ef8db7c9866e04b5dedb144dc5a030dcc67c07978bde 120=1631b8305641710d0462ef8db7c9866e04b5dedb144dc5a030dcc67c07978bde equal=true
+# K-39 finding: the registered minimal scene has no state changes between frames 60 and 120; acceptance decision remains pending.
+# {"code":"test.world_state.frame_difference","params":{"node":"MotionMarker","property":"position","at60":[208.5,270],"at120":[298.5,270],"sha256_60":"868329e6a3134cf8c144e8801b6ec7ed6312a4c67e81a450c3b5b91e4db1f716","sha256_120":"c88ecd155cc3d47d88e54fc336219ff0ddc0767cef56b968ecd963d60636180d"}}
+# {"code":"test.world_state.locale_invariant","params":{"frames":120,"sha256_en":"c88ecd155cc3d47d88e54fc336219ff0ddc0767cef56b968ecd963d60636180d","sha256_de":"c88ecd155cc3d47d88e54fc336219ff0ddc0767cef56b968ecd963d60636180d","byte_equal":true}}
+# Subtest: run validates the GameSpec, processes 120 frames and produces deterministic PNG output
+ok 1 - run validates the GameSpec, processes 120 frames and produces deterministic PNG output
+  ---
+  duration_ms: 24541.834034
+  type: 'test'
+  ...
+# Subtest: validate and resolve remain machine-readable through the public Godot CLI
+ok 2 - validate and resolve remain machine-readable through the public Godot CLI
+  ---
+  duration_ms: 882.089532
+  type: 'test'
+  ...
+# Subtest: validate treats --lang as an exact --locale alias for every supported locale
+ok 3 - validate treats --lang as an exact --locale alias for every supported locale
+  ---
+  duration_ms: 7105.070227
+  type: 'test'
+  ...
+# Subtest: run applies --lang with the same global locale selection as --locale
+ok 4 - run applies --lang with the same global locale selection as --locale
+  ---
+  duration_ms: 806.919889
+  type: 'test'
+  ...
+# Subtest: missing and unsupported --lang values preserve --locale diagnostics and return codes
+ok 5 - missing and unsupported --lang values preserve --locale diagnostics and return codes
+  ---
+  duration_ms: 1419.12
+  type: 'test'
+  ...
+# Subtest: run still rejects an unknown option with cli.run.option.unknown and rc 2
+ok 6 - run still rejects an unknown option with cli.run.option.unknown and rc 2
+  ---
+  duration_ms: 258.775534
+  type: 'test'
+  ...
+# Subtest: run --state writes canonical locale-independent fingerprints and records the 60/120-frame comparison
+ok 7 - run --state writes canonical locale-independent fingerprints and records the 60/120-frame comparison
+  ---
+  duration_ms: 36211.322913
+  type: 'test'
+  ...
+# Subtest: run --state reports missing values, invalid paths, and write failures distinctly
+ok 8 - run --state reports missing values, invalid paths, and write failures distinctly
+  ---
+  duration_ms: 10495.437221
+  type: 'test'
+  ...
+# Subtest: state-motion example changes captured node transform between 60 and 120 frames
+ok 9 - state-motion example changes captured node transform between 60 and 120 frames
+  ---
+  duration_ms: 22372.927458
+  type: 'test'
+  ...
+# Subtest: state-motion fingerprint is byte-identical for --lang en and --lang de at 120 frames
+ok 10 - state-motion fingerprint is byte-identical for --lang en and --lang de at 120 frames
+  ---
+  duration_ms: 24429.998786
+  type: 'test'
+  ...
+# Subtest: run resolves a module scene entry and instantiates GameSpec entities from copied properties
+ok 11 - run resolves a module scene entry and instantiates GameSpec entities from copied properties
+  ---
+  duration_ms: 9894.012698
+  type: 'test'
+  ...
+# Subtest: unknown semantic scene returns a machine-readable path/expected/actual error
+ok 12 - unknown semantic scene returns a machine-readable path/expected/actual error
+  ---
+  duration_ms: 442.219994
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 138937.23762

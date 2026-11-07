@@ -41,7 +41,7 @@ function pointerParent(pointer) {
 
 function allowedFields(parentPath) {
   const fields = {
-    '': ['specVersion', 'game', 'entry', 'modules', 'locales'],
+    '': ['specVersion', 'game', 'entry', 'modules', 'locales', 'entities'],
     '/game': ['id', 'version', 'titleKey', 'descriptionKey'],
     '/entry': ['scene'],
     '/locales': ['default', 'supported'],
@@ -230,7 +230,7 @@ function semanticErrors(value, specPath) {
   return errors;
 }
 
-function runValidation(inputPath, i18n) {
+function runValidation(inputPath, i18n, baseSceneIds = null) {
   const specPath = isAbsolute(inputPath) ? inputPath : resolve(process.cwd(), inputPath);
   const source = readFileSync(specPath, 'utf8');
   const parsed = parseYaml(source);
@@ -260,7 +260,7 @@ function runValidation(inputPath, i18n) {
   errors.push(...semanticErrors(parsed.value, specPath));
   if (errors.length > 0) return formatResultDiagnostics({ ok: false, errors }, i18n);
 
-  const resolution = resolveGameSpec(parsed.value, specPath);
+  const resolution = resolveGameSpec(parsed.value, specPath, baseSceneIds);
   if (!resolution.ok) return formatResultDiagnostics(resolution, i18n);
 
   const locales = parsed.value.locales ?? { default: 'en', supported: ['en'] };
@@ -271,6 +271,8 @@ function runValidation(inputPath, i18n) {
     entryScene: parsed.value.entry.scene,
     modules: parsed.value.modules ?? [],
     moduleOrder: resolution.order,
+    sceneEntries: resolution.sceneEntries ?? [],
+    entities: parsed.value.entities ?? [],
     locales: {
       default: locales.default,
       supported: locales.supported,
@@ -282,21 +284,27 @@ function parseArguments(args) {
   const positionals = [];
   let locale = 'en';
   let missingLocale = false;
+  let baseSceneIds = null;
   for (let index = 0; index < args.length; index += 1) {
-    if (args[index] !== '--locale') {
-      positionals.push(args[index]);
-    } else if (!args[index + 1] || args[index + 1].startsWith('--')) {
-      missingLocale = true;
-    } else {
-      locale = args[index + 1];
+    if (args[index] === '--locale') {
+      if (!args[index + 1] || args[index + 1].startsWith('--')) {
+        missingLocale = true;
+      } else {
+        locale = args[index + 1];
+        index += 1;
+      }
+    } else if (args[index] === '--base-scenes' && args[index + 1] !== undefined) {
+      baseSceneIds = args[index + 1] ? args[index + 1].split(',') : [];
       index += 1;
+    } else {
+      positionals.push(args[index]);
     }
   }
-  return { positionals, locale, missingLocale };
+  return { positionals, locale, missingLocale, baseSceneIds };
 }
 
 function main(args) {
-  const { positionals, locale, missingLocale } = parseArguments(args);
+  const { positionals, locale, missingLocale, baseSceneIds } = parseArguments(args);
   const i18n = createI18n({ locale });
   if (missingLocale || positionals.length !== 2 || positionals[0] !== 'validate') {
     process.stderr.write(`${i18n.t('errors.cli.usage')}\n`);
@@ -305,7 +313,7 @@ function main(args) {
   }
 
   try {
-    const result = runValidation(positionals[1], i18n);
+    const result = runValidation(positionals[1], i18n, baseSceneIds);
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (!result.ok) process.exitCode = 1;
   } catch (error) {

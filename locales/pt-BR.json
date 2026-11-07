@@ -15,5 +15,17 @@
   "errors.module.version.unsatisfied": "Nenhuma versão disponível atende à restrição {constraint} em {path}; versões disponíveis: {available}.",
   "errors.module.conflict": "O módulo {conflictId} conflita com a compilação selecionada em {path} (restrição {constraint}).",
   "errors.ref.unresolved": "Nenhum módulo selecionado fornece {refKind} {actual} em {path}.",
-  "errors.cli.usage": "Uso: validate|resolve <caminho do GameSpec>"
+  "errors.cli.usage": "Uso: validate|resolve <caminho do GameSpec>",
+  "errors.scene.entry.unknown": "A cena {actual} em {path} não está registrada; esperava-se uma destas opções: {expected}.",
+  "errors.scene.duplicate": "O ID da cena {actual} foi registrado mais de uma vez em {path}.",
+  "errors.scene.resource.missing": "O recurso da cena {actual} está ausente em {path}.",
+  "errors.spec.file.missing": "Não foi possível ler o arquivo de especificação {file} em {path}; esperado {expected}, recebido {actual}.",
+  "errors.runtime.engine.missing": "O mecanismo de execução {engine} está indisponível em {path}; esperado {expected}, recebido {actual}.",
+  "errors.cli.dependency.node-missing": "A dependência CLI {dependency} está indisponível em {path}; necessária {requiredVersion}, recebida {actual}.",
+  "ui.minigame.score": "Pontuação: {score}",
+  "ui.minigame.win_condition": "Alcance {target} pontos para vencer.",
+  "ui.minigame.controls_hint": "Mover: {left}/{right}; pular: {jump}.",
+  "ui.minigame.button.start": "Iniciar",
+  "ui.minigame.button.pause": "Pausar",
+  "ui.minigame.button.restart": "Reiniciar"
 }
