@@ -23,33 +23,12 @@ func _initialize() -> void:
 		entity_definitions = parsed_entities
 	var input_actions: Array = []
 	if args.size() == 5:
-		var input_path := args[4]
-		if not input_path.is_absolute_path():
-			_emit_error("runtime.input.invalid", {"expected": {"absolute": true}, "actual": input_path})
+		var input_json := Marshalls.base64_to_raw(args[4]).get_string_from_utf8()
+		var parsed_input = JSON.parse_string(input_json)
+		if typeof(parsed_input) != TYPE_ARRAY:
+			_emit_error("runtime.arguments.invalid", {"expected": "input action array", "actual": typeof(parsed_input)})
 			return
-		if not FileAccess.file_exists(input_path):
-			_emit_error("runtime.input.read_failed", {"path": input_path, "actual": "file_not_found"})
-			return
-		var input_file := FileAccess.open(input_path, FileAccess.READ)
-		if input_file == null:
-			_emit_error("runtime.input.read_failed", {"path": input_path, "actual": FileAccess.get_open_error()})
-			return
-		var parsed_input = JSON.parse_string(input_file.get_as_text())
-		input_file.close()
-		if typeof(parsed_input) != TYPE_DICTIONARY or typeof(parsed_input.get("actions")) != TYPE_ARRAY:
-			_emit_error("runtime.input.invalid", {"expected": {"actions": "array"}, "actual": "invalid_document"})
-			return
-		for action in parsed_input.actions:
-			if typeof(action) != TYPE_DICTIONARY:
-				_emit_error("runtime.input.invalid", {"expected": "non-negative frame and supported action", "actual": action})
-				return
-			var action_frame: Variant = action.get("frame", null)
-			if typeof(action_frame) not in [TYPE_INT, TYPE_FLOAT] or not is_equal_approx(float(action_frame), roundf(float(action_frame))) or int(action_frame) < 0 or String(action.get("action", "")) not in ["move_up", "move_down", "move_left", "move_right"]:
-				_emit_error("runtime.input.invalid", {"expected": "non-negative frame and supported action", "actual": action})
-				return
-			var normalized_action: Dictionary = action.duplicate(true)
-			normalized_action["frame"] = int(action_frame)
-			input_actions.append(normalized_action)
+		input_actions = parsed_input
 	call_deferred("_render", args[0], frame_count_text.to_int(), args[2], entity_definitions, input_actions, args.size() == 5)
 
 

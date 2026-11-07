@@ -77,6 +77,9 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 	var shot_path := ""
 	var state_path := ""
 	var state_requested := false
+	var input_path := ""
+	var input_requested := false
+	var input_actions: Array = []
 	var index := 1
 	while index < args.size():
 		var option := args[index]
@@ -95,8 +98,11 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 			"--state":
 				state_requested = true
 				state_path = value
+			"--input":
+				input_requested = true
+				input_path = value
 			_:
-				_emit_error("cli.run.option.unknown", {"path": "/run", "expected": ["--frames", "--shot", "--state"], "actual": option}, 2)
+				_emit_error("cli.run.option.unknown", {"path": "/run", "expected": ["--frames", "--input", "--shot", "--state"], "actual": option}, 2)
 				return
 		index += 2
 
@@ -120,6 +126,11 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 			_emit_error("cli.run.state.invalid", {"path": "/--state", "expected": {"absolute": true, "extension": ".json", "outside_repository": true}, "actual": state_path_error}, 2)
 			return
 		state_path = state_path.simplify_path()
+	if input_requested:
+		var input_result := _read_input_actions(input_path, locale)
+		if not bool(input_result.get("ok", false)):
+			return
+		input_actions = input_result.get("actions", [])
 	var directory_error := DirAccess.make_dir_recursive_absolute(shot_path.get_base_dir())
 	if directory_error != OK:
 		_emit_error("cli.run.shot.directory_failed", {"path": "/--shot", "expected": {"directory_writable": true}, "actual": directory_error}, 1)
@@ -167,6 +178,8 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 		shot_path,
 		entity_payload,
 	]
+	if input_requested:
+		renderer_command.append(Marshalls.raw_to_base64(JSON.stringify(input_actions).to_utf8_buffer()))
 	var renderer_output: Array = []
 	var renderer_exit := OS.execute("env", renderer_command, renderer_output, true)
 	if renderer_exit != 0 or not _has_frame_marker(renderer_output, frame_count):
@@ -177,7 +190,7 @@ func _run_game(args: PackedStringArray, locale: String) -> void:
 	if png_info.is_empty():
 		_emit_error("cli.run.png.invalid", {"path": "/--shot", "expected": {"format": "PNG", "width_minimum": 1, "height_minimum": 1}, "actual": shot_path}, 1)
 		return
-	if state_requested and not _write_world_state(scene_id, scene_path, frame_count, state_path, entity_definitions):
+	if state_requested and not _write_world_state(scene_id, scene_path, frame_count, state_path, entity_definitions, input_actions, input_requested):
 		return
 	var result := {}
 	result["code"] = "cli.run.complete"
@@ -208,6 +221,76 @@ func _add_entity_instances(scene_root: Node, entity_definitions: Array) -> void:
 		scene_root.add_child(instance)
 
 
+func _read_input_actions(path: String, locale: String) -> Dictionary:
+	if not path.is_absolute_path() or path.get_extension().to_lower() != "json":
+		_emit_catalog_error("field.pattern", {"path": "/--input", "expected": {"absolute": true, "extension": ".json"}, "actual": path}, 2, locale)
+		return {"ok": false}
+	var normalized_path := path.simplify_path()
+	if not FileAccess.file_exists(normalized_path):
+		_emit_catalog_error("spec.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
+		return {"ok": false}
+	var input_file := FileAccess.open(normalized_path, FileAccess.READ)
+	if input_file == null:
+		_emit_catalog_error("spec.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
+		return {"ok": false}
+	var parsed_input = JSON.parse_string(input_file.get_as_text())
+	input_file.close()
+	if typeof(parsed_input) != TYPE_DICTIONARY or typeof(parsed_input.get("actions")) != TYPE_ARRAY:
+		_emit_catalog_error("field.type", {"path": "/--input", "expected": {"type": "object", "required": ["actions"], "actions": "array"}, "actual": typeof(parsed_input)}, 2, locale)
+		return {"ok": false}
+	var normalized_actions: Array = []
+	for action_index in range(parsed_input.actions.size()):
+		var action: Variant = parsed_input.actions[action_index]
+		if typeof(action) != TYPE_DICTIONARY:
+			_emit_catalog_error("field.type", {"path": "/--input/actions/%d" % action_index, "expected": "action object", "actual": typeof(action)}, 2, locale)
+			return {"ok": false}
+		var action_frame: Variant = action.get("frame", null)
+		if typeof(action_frame) not in [TYPE_INT, TYPE_FLOAT] or not is_equal_approx(float(action_frame), roundf(float(action_frame))) or int(action_frame) < 0:
+			_emit_catalog_error("field.type", {"path": "/--input/actions/%d/frame" % action_index, "expected": {"type": "non-negative integer"}, "actual": action_frame}, 2, locale)
+			return {"ok": false}
+		var action_name := String(action.get("action", ""))
+		if action_name not in ["move_up", "move_down", "move_left", "move_right"]:
+			_emit_catalog_error("field.enum", {"path": "/--input/actions/%d/action" % action_index, "expected": ["move_up", "move_down", "move_left", "move_right"], "actual": action_name}, 2, locale)
+			return {"ok": false}
+		var normalized_action: Dictionary = action.duplicate(true)
+		normalized_action["frame"] = int(action_frame)
+		normalized_actions.append(normalized_action)
+	return {"ok": true, "actions": normalized_actions}
+
+
+func _emit_catalog_error(code: String, params: Dictionary, exit_code: int, locale: String) -> void:
+	var record := {"code": code, "params": params, "catalogKey": "errors." + code}
+	var message := _localized_catalog_message(locale, String(record["catalogKey"]), params)
+	if not message.is_empty():
+		record["message"] = message
+	_emit_record(record, exit_code)
+
+
+func _localized_catalog_message(locale: String, catalog_key: String, params: Dictionary) -> String:
+	var selected_locale := locale
+	var locale_directory := ProjectSettings.globalize_path("res://../locales").simplify_path()
+	var catalog_path := locale_directory.path_join(selected_locale + ".json")
+	if not FileAccess.file_exists(catalog_path):
+		selected_locale = "en"
+		catalog_path = locale_directory.path_join("en.json")
+	var catalog_file := FileAccess.open(catalog_path, FileAccess.READ)
+	if catalog_file == null:
+		return ""
+	var catalog_value = JSON.parse_string(catalog_file.get_as_text())
+	catalog_file.close()
+	if typeof(catalog_value) != TYPE_DICTIONARY:
+		return ""
+	var template: Variant = catalog_value.get(catalog_key, "")
+	if typeof(template) != TYPE_STRING:
+		return ""
+	var message := String(template)
+	for parameter_name in params:
+		var parameter_value: Variant = params[parameter_name]
+		var rendered_value := String(parameter_value) if typeof(parameter_value) == TYPE_STRING else JSON.stringify(parameter_value)
+		message = message.replace("{" + String(parameter_name) + "}", rendered_value)
+	return message
+
+
 func _state_path_error(path: String, repo_root: String) -> String:
 	if not path.is_absolute_path():
 		return "absolute"
@@ -219,7 +302,7 @@ func _state_path_error(path: String, repo_root: String) -> String:
 	return ""
 
 
-func _write_world_state(scene_id: String, scene_path: String, frame_count: int, state_path: String, entity_definitions: Array) -> bool:
+func _write_world_state(scene_id: String, scene_path: String, frame_count: int, state_path: String, entity_definitions: Array, input_actions: Array, input_requested: bool) -> bool:
 	var capture_command := [
 		"SYNAPSE_GODOT_MODE=offscreen",
 		"godot",
@@ -235,6 +318,8 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 		str(frame_count),
 		state_path,
 		Marshalls.raw_to_base64(JSON.stringify(entity_definitions).to_utf8_buffer()),
+		Marshalls.raw_to_base64(JSON.stringify(input_actions).to_utf8_buffer()),
+		str(input_requested),
 	]
 	var capture_output: Array = []
 	var capture_exit := OS.execute("env", capture_command, capture_output, true)
@@ -252,8 +337,8 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 
 
 func _capture_world_state(args: PackedStringArray) -> void:
-	if args.size() != 5:
-		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"arguments": 5}, "actual": args.size()}, 1)
+	if args.size() != 7:
+		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"arguments": 7}, "actual": args.size()}, 1)
 		return
 	var scene_id := String(args[0])
 	var scene_path := String(args[1])
@@ -265,6 +350,13 @@ func _capture_world_state(args: PackedStringArray) -> void:
 		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"entities": "array"}, "actual": typeof(parsed_entities)}, 1)
 		return
 	var entity_definitions: Array = parsed_entities
+	var input_json := Marshalls.base64_to_raw(String(args[5])).get_string_from_utf8()
+	var parsed_input = JSON.parse_string(input_json)
+	if typeof(parsed_input) != TYPE_ARRAY:
+		_emit_error("cli.run.state.capture_failed", {"path": "/--input", "expected": {"actions": "array"}, "actual": typeof(parsed_input)}, 1)
+		return
+	var input_actions: Array = parsed_input
+	var input_requested := String(args[6]) == "true"
 	if not frame_text.is_valid_int():
 		_emit_error("cli.run.state.capture_failed", {"path": "/--frames", "expected": {"type": "integer"}, "actual": frame_text}, 1)
 		return
@@ -290,6 +382,8 @@ func _capture_world_state(args: PackedStringArray) -> void:
 		_emit_error("cli.run.state.capture_failed", {"path": "/entry/scene", "expected": {"instantiable": true}, "actual": scene_id}, 1)
 		return
 	root.size = STATE_VIEW_SIZE
+	if input_requested and scene_root.has_method("configure_input"):
+		scene_root.call("configure_input", input_actions)
 	root.add_child(scene_root)
 	_add_entity_instances(scene_root, entity_definitions)
 	for _frame in range(frame_count):

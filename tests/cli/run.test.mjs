@@ -28,20 +28,6 @@ function runCli(args) {
   });
 }
 
-function runArenaRuntime(frameCount, shotPath, entityDefinitions, inputPath = undefined) {
-  const args = [
-    '--path', 'game', '--script', 'res://runtime/render_game.gd', '--',
-    'res://runtime/scenes/arena.tscn', String(frameCount), shotPath,
-    Buffer.from(JSON.stringify(entityDefinitions)).toString('base64'),
-  ];
-  if (inputPath !== undefined) args.push(inputPath);
-  return spawnSync(GODOT, args, {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-    timeout: 120_000,
-    env: { ...process.env, PATH: GODOT_PATH, SYNAPSE_GODOT_MODE: 'offscreen' },
-  });
-}
 
 function machineRecord(stdout) {
   const line = stdout.split(/\r?\n/).find((item) => item.trim().startsWith('{'));
@@ -117,13 +103,18 @@ test('run validates the GameSpec, processes 120 frames and produces deterministi
 test('arena GameSpec produces a locale-independent state fingerprint with movement, collection, and victory', { timeout: 240_000 }, () => {
   rmSync(ARENA_TEST_DIR, { recursive: true, force: true });
   mkdirSync(ARENA_TEST_DIR, { recursive: true });
+  const inputPath = join(ARENA_TEST_DIR, 'frame-indexed-actions.json');
+  const actions = [];
+  for (let frame = 1; frame <= 60; frame += 1) actions.push({ frame, action: 'move_right' });
+  for (let frame = 61; frame <= 100; frame += 1) actions.push({ frame, action: 'move_down' });
+  writeFileSync(inputPath, JSON.stringify({ actions }));
 
   const runArena = (frames, locale, suffix) => {
     const shotPath = join(ARENA_TEST_DIR, `${suffix}.png`);
     const statePath = join(ARENA_TEST_DIR, `${suffix}.json`);
     const result = runCli([
       'run', 'examples/arena.game.yaml', '--frames', String(frames), '--shot', shotPath,
-      '--lang', locale, '--state', statePath,
+      '--lang', locale, '--state', statePath, '--input', inputPath,
     ]);
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     const record = machineRecord(result.stdout);
@@ -172,13 +163,9 @@ test('arena GameSpec produces a locale-independent state fingerprint with moveme
   assert.deepEqual(repeat.png, frame120.png, 'repeating the same run must preserve PNG bytes');
 });
 
-test('arena runtime applies deterministic JSON input and reports a missing input file structurally', { timeout: 120_000 }, () => {
+test('public run --input applies deterministic actions and localizes a missing input file', { timeout: 180_000 }, () => {
   rmSync(ARENA_TEST_DIR, { recursive: true, force: true });
   mkdirSync(ARENA_TEST_DIR, { recursive: true });
-  const entities = [{
-    id: 'entity.arena.player',
-    properties: { role: 'player', x: 120, y: 270, speed: 4, win_target: 3 },
-  }];
   const inputPath = join(ARENA_TEST_DIR, 'actions.json');
   const emptyInputPath = join(ARENA_TEST_DIR, 'empty-actions.json');
   writeFileSync(inputPath, JSON.stringify({ actions: [
@@ -189,24 +176,57 @@ test('arena runtime applies deterministic JSON input and reports a missing input
   writeFileSync(emptyInputPath, JSON.stringify({ actions: [] }));
 
   const inputShot = join(ARENA_TEST_DIR, 'input.png');
+  const inputState = join(ARENA_TEST_DIR, 'input.json');
   const repeatShot = join(ARENA_TEST_DIR, 'input-repeat.png');
+  const repeatState = join(ARENA_TEST_DIR, 'input-repeat.json');
   const emptyShot = join(ARENA_TEST_DIR, 'empty-input.png');
-  const inputRun = runArenaRuntime(4, inputShot, entities, inputPath);
+  const emptyState = join(ARENA_TEST_DIR, 'empty-input.json');
+  const base = ['run', 'examples/arena.game.yaml', '--frames', '4'];
+  const inputRun = runCli([...base, '--shot', inputShot, '--state', inputState, '--input', inputPath]);
   assert.equal(inputRun.status, 0, `${inputRun.stdout}\n${inputRun.stderr}`);
-  assert.equal(machineRecord(inputRun.stdout).code, 'game.run.frames_complete');
-  const repeatRun = runArenaRuntime(4, repeatShot, entities, inputPath);
+  assert.equal(machineRecord(inputRun.stdout).code, 'cli.run.complete');
+  const repeatRun = runCli([...base, '--shot', repeatShot, '--state', repeatState, '--input', inputPath]);
   assert.equal(repeatRun.status, 0, `${repeatRun.stdout}\n${repeatRun.stderr}`);
   assert.deepEqual(readFileSync(repeatShot), readFileSync(inputShot));
+  assert.deepEqual(readFileSync(repeatState), readFileSync(inputState));
 
-  const emptyRun = runArenaRuntime(4, emptyShot, entities, emptyInputPath);
+  const emptyRun = runCli([...base, '--shot', emptyShot, '--state', emptyState, '--input', emptyInputPath]);
   assert.equal(emptyRun.status, 0, `${emptyRun.stdout}\n${emptyRun.stderr}`);
-  assert.notDeepEqual(readFileSync(emptyShot), readFileSync(inputShot), 'JSON actions must affect rendered state');
+  assert.notDeepEqual(readFileSync(emptyShot), readFileSync(inputShot), 'JSON actions must affect the rendered output');
+  assert.notDeepEqual(readFileSync(emptyState), readFileSync(inputState), 'JSON actions must affect the world-state fingerprint');
 
-  const missingRun = runArenaRuntime(4, join(ARENA_TEST_DIR, 'missing.png'), entities, join(ARENA_TEST_DIR, 'absent.json'));
-  assert.equal(missingRun.status, 1, `${missingRun.stdout}\n${missingRun.stderr}`);
-  const missingDiagnostic = machineRecord(missingRun.stdout);
-  assert.equal(missingDiagnostic.code, 'runtime.input.read_failed');
-  assert.equal(missingDiagnostic.params.actual, 'file_not_found');
+  const missingPath = join(ARENA_TEST_DIR, 'absent.json');
+  const missingArgs = [...base, '--shot', join(ARENA_TEST_DIR, 'missing.png'), '--input', missingPath];
+  const missingEnglish = runCli([...missingArgs, '--lang', 'en']);
+  assert.equal(missingEnglish.status, 1, `${missingEnglish.stdout}\n${missingEnglish.stderr}`);
+  const englishDiagnostic = machineRecord(missingEnglish.stdout);
+  assert.equal(englishDiagnostic.code, 'spec.file.missing');
+  assert.equal(englishDiagnostic.catalogKey, 'errors.spec.file.missing');
+  assert.equal(englishDiagnostic.params.file, missingPath);
+  assert.ok(englishDiagnostic.message.includes(missingPath));
+  assert.doesNotMatch(`${missingEnglish.stdout}\n${missingEnglish.stderr}`, /ENOENT|127/);
+
+  const missingGerman = runCli([...missingArgs, '--lang', 'de']);
+  assert.equal(missingGerman.status, 1, `${missingGerman.stdout}\n${missingGerman.stderr}`);
+  const germanDiagnostic = machineRecord(missingGerman.stdout);
+  assert.equal(germanDiagnostic.code, englishDiagnostic.code);
+  assert.deepEqual(germanDiagnostic.params, englishDiagnostic.params);
+  assert.equal(germanDiagnostic.catalogKey, englishDiagnostic.catalogKey);
+  assert.notEqual(germanDiagnostic.message, englishDiagnostic.message, 'diagnostic text must use the selected locale');
+
+  const invalidPath = runCli([...base, '--shot', join(ARENA_TEST_DIR, 'invalid.png'), '--input', 'relative.json']);
+  assert.equal(invalidPath.status, 2);
+  assert.equal(machineRecord(invalidPath.stdout).code, 'field.pattern');
+
+  const malformedPath = join(ARENA_TEST_DIR, 'malformed.json');
+  writeFileSync(malformedPath, '{"actions": [');
+  const malformedRun = runCli([...base, '--shot', join(ARENA_TEST_DIR, 'malformed.png'), '--input', malformedPath, '--lang', 'ru']);
+  assert.equal(malformedRun.status, 2);
+  const malformedDiagnostic = machineRecord(malformedRun.stdout);
+  assert.equal(malformedDiagnostic.code, 'field.type');
+  assert.equal(malformedDiagnostic.catalogKey, 'errors.field.type');
+  assert.ok(malformedDiagnostic.message.length > 0);
+  assert.doesNotMatch(`${malformedRun.stdout}\\n${malformedRun.stderr}`, /ENOENT|127/);
 });
 
 test('validate and resolve remain machine-readable through the public Godot CLI', { timeout: 60_000 }, () => {
@@ -291,7 +311,7 @@ test('run still rejects an unknown option with cli.run.option.unknown and rc 2',
   assert.equal(result.status, 2, `${result.stdout}\n${result.stderr}`);
   const diagnostic = machineRecord(result.stdout);
   assert.equal(diagnostic.code, 'cli.run.option.unknown');
-  assert.deepEqual(diagnostic.params.expected, ['--frames', '--shot', '--state']);
+  assert.deepEqual(diagnostic.params.expected, ['--frames', '--input', '--shot', '--state']);
   assert.equal(diagnostic.params.actual, '--nope');
 });
 
