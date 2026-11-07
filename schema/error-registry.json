@@ -198,7 +198,7 @@
       "code": "runtime.engine.missing",
       "stage": "semantic",
       "implementedIn": "K-3",
-      "summary": "Движок, которым выполняется run, недоступен: бинарник не найден или не запускается. Валидация к этому моменту уже прошла, рендер не начат, шот не создан.",
+      "summary": "Движок, которым выполняется run, недоступен или не смог отрендерить сцену: бинарник не найден, не запускается либо завершился без маркера кадров. Валидация к этому моменту уже прошла. Машинные детали (exit_code, reason, renderer_record) остаются в params.actual.",
       "params": ["path", "expected", "actual"],
       "extraParams": ["engine"],
       "catalogKey": "errors.runtime.engine.missing"
@@ -207,10 +207,19 @@
       "code": "cli.dependency.node-missing",
       "stage": "semantic",
       "implementedIn": "K-3",
-      "summary": "CLI нужен Node.js для валидатора и резолвера, а node недоступен в окружении. Проверка не выполнена — это ошибка, а не пропуск и не успех.",
+      "summary": "CLI нужен Node.js для валидатора и резолвера, а node недоступен в окружении. Проверка не выполнена — это ошибка, а не пропуск и не успех. Единственная законная форма кода — с дефисом; подчёркивание в коде недопустимо.",
       "params": ["path", "expected", "actual"],
       "extraParams": ["dependency", "requiredVersion"],
       "catalogKey": "errors.cli.dependency.node-missing"
+    },
+    {
+      "code": "cli.usage",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "CLI получил недопустимые аргументы: ожидается команда validate или resolve и путь к GameSpec. Сообщение печатается в stderr и уже существует во всех восьми каталогах, поэтому у кода есть строка реестра, а не только ключ.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["command"],
+      "catalogKey": "errors.cli.usage"
     }
   ]
 }

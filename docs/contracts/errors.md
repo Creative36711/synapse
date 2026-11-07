@@ -54,8 +54,9 @@
 | `scene.duplicate` | semantic | K-3 | path, expected, actual, sceneId, modules | `errors.scene.duplicate` | один ID сцены сопоставлен ресурсу дважды |
 | `scene.resource.missing` | semantic | K-3 | path, expected, actual, sceneId, resource | `errors.scene.resource.missing` | ресурса `res://…tscn` из `sceneEntries` нет |
 | `spec.file.missing` | semantic | K-3 | path, expected, actual, file | `errors.spec.file.missing` | файл спецификации не читается |
-| `runtime.engine.missing` | semantic | K-3 | path, expected, actual, engine | `errors.runtime.engine.missing` | движок `run` недоступен |
+| `runtime.engine.missing` | semantic | K-3 | path, expected, actual, engine | `errors.runtime.engine.missing` | движок `run` недоступен или не отрендерил сцену |
 | `cli.dependency.node-missing` | semantic | K-3 | path, expected, actual, dependency, requiredVersion | `errors.cli.dependency.node-missing` | нет Node.js, проверка не выполнена |
+| `cli.usage` | semantic | K-3 | path, expected, actual, command | `errors.cli.usage` | CLI вызван без допустимой команды |
 | `module.dependency.missing` | resolution | K-4 | path, expected, actual, requiredBy, constraint | `errors.module.dependency.missing` | обязательная зависимость не найдена |
 | `module.dependency.cycle` | resolution | K-4 | path, expected, actual, cycle | `errors.module.dependency.cycle` | цикл в графе зависимостей (INV-5) |
 | `module.version.unsatisfied` | resolution | K-4 | path, expected, actual, constraint, available | `errors.module.version.unsatisfied` | нет версии под диапазон |
@@ -64,6 +65,35 @@
 
 Каждая строка этой таблицы сверяется с реестром автоматически: код без строки и строка без кода —
 провал `npm run check:contracts`.
+
+## Диагностика и машинные записи CLI
+
+CLI печатает два вида записей, и правила у них разные:
+
+| Вид | Как печатается | Что обязано выполняться |
+|---|---|---|
+| **Диагностика** | с каталогом: `code`, `params`, `catalogKey`, `message` | код есть в реестре; `catalogKey = "errors." + code` без override; ключ есть во всех восьми каталогах; текст из каталога (INV-14) |
+| **Машинная запись CLI** | без каталога: только `code` и `params` (`cli.run.usage`, `cli.run.option.unknown`, `cli.run.frames.invalid`, `cli.run.shot.invalid`, `cli.run.shot.directory_failed`, `cli.run.state.invalid`, `cli.run.state.capture_failed`, `cli.run.state.write_failed`, `cli.run.png.invalid`, `cli.run.option.value_missing`, а также успешная `cli.run.complete`) | код стабилен и не переводится; в реестр такой код не входит, потому что у него нет и не должно быть ключа каталога; параметры машиночитаемы |
+
+Второй вид — протокол CLI, а не пользовательская диагностика: текста у него нет, ключа каталога тоже.
+Поэтому правило «`catalogKey = errors.<code>`» к нему не применяется — не как исключение, а по
+определению. Если такую запись нужно показать человеку, её сначала переводят в диагностику: строка в
+реестре, ключ во всех восьми каталогах, `_emit_catalog_error` без override.
+
+### Известные расхождения в `game/cli/main.gd` (BASE_SHA)
+
+Расхождения зафиксированы аудитом и этой карточкой не исправляются: правка `game/**` — предмет
+отдельной карточки зоны `game/**`. Каждое описано в записи решения с откатом.
+
+| Где | Что не так | Целевое состояние |
+|---|---|---|
+| `_emit_node_missing` | код печатается как `cli.dependency.node_missing` (подчёркивание), а реестр знает `cli.dependency.node-missing`; расхождение скрыто override-ключом | код ровно `cli.dependency.node-missing`, без override |
+| `_run_game`, рендер | код `cli.run.render_failed` отсутствует в реестре, а `catalogKey` подменён на `errors.runtime.engine.missing` | случай сообщается кодом `runtime.engine.missing` (он в реестре, ключ есть во всех каталогах), машинные детали — в `params.actual`; override не нужен |
+| `_write_world_state` | тот же override на пути снимка состояния | то же: код `runtime.engine.missing` без override |
+
+Пока расхождения не закрыты, контрактный тест перечисляет их явно: любой **новый** код мимо реестра
+или **новый** override — провал `check:contracts`. Список расхождений в тесте и в записи решения
+обязан совпадать, поэтому «тихо» расширить список нельзя.
 
 ## Стадии
 
@@ -84,19 +114,23 @@
 стадия `runtime`, меняется только поле `stage` (и вместе с ним `implementedIn`) — один код, одна
 строка, см. [`../decisions/SYN-2.md`](../decisions/SYN-2.md).
 
-## Тексты новых кодов
+## Тексты кодов: где они живут
 
-`catalogKey` новых кодов выводится из кода (`errors.scene.entry.unknown` и т. д.), но строки в
-каталогах `locales/<locale>.json` для них ещё не добавлены: восемь каталогов ведёт карточка
-локализации, и дописывать их из контрактной карточки нельзя. До появления текстов диагностика такого
-кода рендерится штатным `locale.key.missing`, а сам код и `params` остаются верными. Это известный
-долг, а не разрешение писать текст в контракт (INV-9, INV-14).
+Для каждого кода реестра строка `errors.<code>` существует во всех восьми каталогах
+`locales/<locale>.json` (en, ru, zh-Hans, ja, pt-BR, de, fr, ko). Это не пожелание, а проверяемое
+свойство: контрактный тест `tests/contracts/cli-diagnostics.test.mjs` сверяет реестр с каталогами в
+обе стороны, а `npm run i18n-check` проверяет состав ключей.
+
+Обратное тоже верно: ключ `errors.*` в каталоге без строки в реестре — расхождение. Новый ключ
+появляется вместе со строкой реестра, одним изменением; иначе диагностика разъезжается с текстом
+(INV-9, INV-14).
 
 ## Как добавить код
 
 1. Код составной, нижний регистр, через точку: `<область>.<что>` (`field.*`, `yaml.*`, `module.*`).
 2. `params` начинаются с `path`, `expected`, `actual`; дополнительные имена — в `extraParams`.
-3. `catalogKey` всегда `errors.<code>` — ключ не придумывается отдельно от кода.
+3. `catalogKey` всегда `errors.<code>`, без исключений и без подмены: пятого аргумента-override у
+   `_emit_catalog_error` быть не должно. Ключ не придумывается отдельно от кода.
 4. Стадия и карточка обязательны: код без владельца не попадает в реестр.
 5. Код стадии `K-2` обязан иметь хотя бы один пример в `schema/examples/**`: неподтверждённый код не
    отличается от опечатки.
