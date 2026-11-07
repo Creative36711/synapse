@@ -91,7 +91,7 @@ test('valid module graph validation output is byte-identical in en and de', () =
     assert.equal(german.stdout, english.stdout);
     assert.equal(english.report.ok, true);
     assert.deepEqual(Object.keys(english.report).sort(), [
-      'entryScene', 'gameId', 'locales', 'moduleOrder', 'modules', 'ok', 'version',
+      'entities', 'entryScene', 'gameId', 'locales', 'moduleOrder', 'modules', 'ok', 'sceneEntries', 'version',
     ]);
     assert.deepEqual(english.report.moduleOrder, ['synapse.test.base', 'synapse.test.core', 'synapse.test.data', 'synapse.test.app', 'synapse.test.extra']);
   } finally {

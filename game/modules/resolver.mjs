@@ -3,7 +3,7 @@
 // A GameSpec's manifests live in its stem-specific `modules/` directory, with
 // deterministic sibling/shared fallbacks. This helper never contacts external services.
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -42,7 +42,7 @@ function pointerParent(pointer) {
 function allowedFields(parentPath, schemaKind) {
   if (schemaKind === 'gamespec') {
     const fields = {
-      '': ['specVersion', 'game', 'entry', 'modules', 'locales'],
+      '': ['specVersion', 'game', 'entry', 'modules', 'locales', 'entities'],
       '/game': ['id', 'version', 'titleKey', 'descriptionKey'],
       '/entry': ['scene'],
       '/locales': ['default', 'supported'],
@@ -55,7 +55,7 @@ function allowedFields(parentPath, schemaKind) {
     '': ['specVersion', 'module', 'requires', 'dependencies', 'conflicts', 'provides'],
     '/module': ['id', 'version', 'titleKey', 'descriptionKey'],
     '/requires': ['spec', 'engine'],
-    '/provides': ['scenes', 'locales'],
+    '/provides': ['scenes', 'sceneEntries', 'locales'],
   };
   if (/^\/dependencies\/\d+$/.test(parentPath)) return ['id', 'version', 'optional'];
   if (/^\/conflicts\/\d+$/.test(parentPath)) return ['id', 'version', 'reasonKey'];
@@ -510,7 +510,7 @@ function topologicalOrder(assignments, edges) {
   return order.length === assignments.size ? order : undefined;
 }
 
-function resolutionErrors(assignments, edges, gameSpec, catalog) {
+function resolutionErrors(assignments, edges, catalog) {
   const errors = [];
   const order = topologicalOrder(assignments, edges);
   if (!order) {
@@ -544,31 +544,66 @@ function resolutionErrors(assignments, edges, gameSpec, catalog) {
   }
   if (errors.length) return errors;
 
-  // An empty module graph is a valid no-op for `resolve` and has no module-owned
-  // scene dictionary to inspect. For non-empty builds, entry.scene must resolve.
-  if (assignments.size > 0) {
-    const providedBy = [...assignments.keys()].filter((id) =>
-      (assignments.get(id).manifest.provides?.scenes ?? []).includes(gameSpec.entry.scene))
-      .sort((left, right) => left.localeCompare(right, 'en'));
-    if (providedBy.length === 0) {
-      errors.push(diagnostic(catalog, 'ref.unresolved', {
-        path: '/entry/scene',
-        expected: 'scene provided by a resolved module',
-        actual: gameSpec.entry.scene,
-        refKind: 'scene',
-        providedBy,
-      }));
-      return errors;
+  return errors;
+}
+
+function collectSceneEntries(assignments, order, baseSceneIds, catalog) {
+  const owners = new Map(baseSceneIds.map((id) => [id, ['core']]));
+  const entries = [];
+  const errors = [];
+
+  for (const moduleId of order) {
+    const manifest = assignments.get(moduleId).manifest;
+    const providedScenes = manifest.provides.scenes ?? [];
+    for (const [index, entry] of (manifest.provides.sceneEntries ?? []).entries()) {
+      const path = `/provides/sceneEntries/${index}`;
+      if (!providedScenes.includes(entry.id)) {
+        errors.push(diagnostic(catalog, 'scene.entry.unknown', {
+          path: `${path}/id`,
+          expected: [...providedScenes].sort((left, right) => left.localeCompare(right, 'en')),
+          actual: entry.id,
+          sceneId: entry.id,
+          moduleId,
+        }));
+      }
+
+      const previousModules = owners.get(entry.id);
+      if (previousModules) {
+        const modules = [...new Set([...previousModules, moduleId])]
+          .sort((left, right) => left.localeCompare(right, 'en'));
+        errors.push(diagnostic(catalog, 'scene.duplicate', {
+          path: `${path}/id`,
+          expected: 'one resource per scene ID in the resolved build',
+          actual: entry.id,
+          sceneId: entry.id,
+          modules,
+        }));
+        previousModules.push(moduleId);
+      } else {
+        owners.set(entry.id, [moduleId]);
+      }
+
+      const resourcePath = join(REPO_ROOT, 'game', entry.resource.slice('res://'.length));
+      if (!existsSync(resourcePath) || !statSync(resourcePath).isFile()) {
+        errors.push(diagnostic(catalog, 'scene.resource.missing', {
+          path: `${path}/resource`,
+          expected: 'an existing res://…tscn file',
+          actual: entry.resource,
+          sceneId: entry.id,
+          resource: entry.resource,
+        }));
+      }
+      entries.push({ id: entry.id, resource: entry.resource, moduleId });
     }
   }
-  return errors;
+  return { entries, errors };
 }
 
 function loadCatalog() {
   return JSON.parse(readFileSync(CATALOG_PATH, 'utf8'));
 }
 
-export function resolveGameSpec(gameSpec, specPath) {
+export function resolveGameSpec(gameSpec, specPath, baseSceneIds = null) {
   const catalog = loadCatalog();
   const gameValidator = compileSchema(GAME_SCHEMA_PATH);
   const gameErrors = structuralErrors(gameSpec, gameValidator, catalog, 'gamespec');
@@ -627,25 +662,46 @@ export function resolveGameSpec(gameSpec, specPath) {
   const solved = solveGraph(rootRequests, catalogById, catalog);
   if (!solved.state) return { ok: false, errors: solved.error ? [solved.error] : [] };
   const { assignments, edges } = solved.state;
-  const errors = resolutionErrors(assignments, edges, gameSpec, catalog);
+  const errors = resolutionErrors(assignments, edges, catalog);
   if (errors.length) return { ok: false, errors };
   const order = topologicalOrder(assignments, edges) ?? [];
+  const coreSceneIds = Array.isArray(baseSceneIds) ? baseSceneIds : [];
+  const collectedScenes = collectSceneEntries(assignments, order, coreSceneIds, catalog);
+  if (collectedScenes.errors.length) return { ok: false, errors: collectedScenes.errors };
+  const availableSceneIds = [...new Set([
+    ...coreSceneIds,
+    ...collectedScenes.entries.map(({ id }) => id),
+  ])].sort((left, right) => left.localeCompare(right, 'en'));
+  if (Array.isArray(baseSceneIds) && !availableSceneIds.includes(gameSpec.entry.scene)) {
+    return {
+      ok: false,
+      errors: [diagnostic(catalog, 'scene.entry.unknown', {
+        path: '/entry/scene',
+        expected: availableSceneIds,
+        actual: gameSpec.entry.scene,
+        sceneId: gameSpec.entry.scene,
+      })],
+    };
+  }
   return {
     ok: true,
     gameId: gameSpec.game.id,
     entryScene: gameSpec.entry.scene,
     order,
     modules: order.map((id) => ({ id, version: assignments.get(id).manifest.module.version })),
+    sceneEntries: collectedScenes.entries,
   };
 }
 
 function main(args) {
-  if (args.length !== 2 || args[0] !== 'resolve') {
+  const hasBaseScenes = args.length === 4 && args[2] === '--base-scenes';
+  if ((args.length !== 2 && !hasBaseScenes) || args[0] !== 'resolve') {
     process.stderr.write(`${loadCatalog()['errors.cli.usage']}\n`);
     process.exitCode = 2;
     return;
   }
   try {
+    const baseSceneIds = hasBaseScenes ? (args[3] ? args[3].split(',') : []) : null;
     const specPath = isAbsolute(args[1]) ? args[1] : resolve(process.cwd(), args[1]);
     const parsed = parseYaml(readFileSync(specPath, 'utf8'), loadCatalog());
     if (parsed.error) {
@@ -653,7 +709,7 @@ function main(args) {
       process.exitCode = 1;
       return;
     }
-    const result = resolveGameSpec(parsed.value, specPath);
+    const result = resolveGameSpec(parsed.value, specPath, baseSceneIds);
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (!result.ok) process.exitCode = 1;
   } catch (error) {
