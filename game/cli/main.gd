@@ -176,7 +176,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 	if scene_path.is_empty():
 		var expected_scenes: Array = scene_registry.keys()
 		expected_scenes.sort()
-		_emit_error("scene.entry.unknown", {"path": "/entry/scene", "expected": expected_scenes, "actual": scene_id, "sceneId": scene_id}, 1)
+		_emit_catalog_error("ref.unresolved", {"path": "/entry/scene", "expected": expected_scenes, "actual": scene_id, "refKind": "scene", "providedBy": []}, 1, locale)
 		return
 	var entity_definitions: Array = validation_result.get("entities", [])
 	var entity_payload := Marshalls.raw_to_base64(JSON.stringify(entity_definitions).to_utf8_buffer())

@@ -201,15 +201,57 @@ describe('Synapse module dependency resolver public Godot CLI', () => {
     assert.equal(error.catalogKey, 'errors.module.conflict');
   });
 
-  test('rejects an entry scene absent from the core and resolved module registry', () => {
+  test('reports ref.unresolved for an unbound scene and lists actual runnable IDs plus providers', () => {
+    const build = createSceneBuild('scene.not-provided', [
+      {
+        id: 'synapse.test.unboundzeta',
+        providesScenes: ['scene.not-provided'],
+      },
+      {
+        id: 'synapse.test.unboundalpha',
+        providesScenes: ['scene.not-provided'],
+      },
+      {
+        id: 'synapse.test.boundscenes',
+        providesScenes: ['scene.module-z', 'scene.module-a'],
+        sceneEntries: [
+          { id: 'scene.module-z', resource: 'res://runtime/scenes/state_motion.tscn' },
+          { id: 'scene.module-a', resource: 'res://runtime/scenes/main_menu.tscn' },
+        ],
+      },
+    ]);
+    try {
+      const result = invoke('resolve', build.specPath);
+      assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+      assert.equal(result.report.errors.length, 1);
+      const error = result.report.errors[0];
+      assert.equal(error.code, 'ref.unresolved');
+      assert.equal(error.catalogKey, 'errors.ref.unresolved');
+      assert.deepEqual(error.params, {
+        path: '/entry/scene',
+        expected: ['scene.main-menu', 'scene.module-a', 'scene.module-z', 'scene.state-motion'],
+        actual: 'scene.not-provided',
+        refKind: 'scene',
+        providedBy: ['synapse.test.unboundalpha', 'synapse.test.unboundzeta'],
+      });
+    } finally {
+      rmSync(build.root, { recursive: true, force: true });
+    }
+  });
+
+  test('uses an empty providedBy list when no selected module declares the unresolved scene', () => {
     const result = invoke('resolve', fixture('unresolved.game.yaml'));
-    assert.notEqual(result.status, 0);
-    const error = result.report.errors.find((entry) => entry.code === 'scene.entry.unknown');
-    assert.ok(error, JSON.stringify(result.report.errors));
-    assert.equal(error.params.path, '/entry/scene');
-    assert.equal(error.params.sceneId, 'scene.not-provided');
-    assert.equal(error.params.actual, 'scene.not-provided');
-    assert.deepEqual(error.params.expected, ['scene.main-menu', 'scene.state-motion']);
+    assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+    assert.equal(result.report.errors.length, 1);
+    const error = result.report.errors[0];
+    assert.equal(error.code, 'ref.unresolved');
+    assert.deepEqual(error.params, {
+      path: '/entry/scene',
+      expected: ['scene.main-menu', 'scene.state-motion'],
+      actual: 'scene.not-provided',
+      refKind: 'scene',
+      providedBy: [],
+    });
   });
 
   test('combines resolved module scene entries with core scenes without core registrations', () => {

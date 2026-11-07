@@ -656,17 +656,64 @@ test('run resolves a module scene entry and instantiates GameSpec entities from 
     assert.equal(stateError.params.path, '/entities/0/properties/state');
 
     writeSpec('scene.not-registered');
-    const unknown = runCli(['validate', specPath]);
+    const unknown = runCli(['validate', specPath, '--lang', 'en']);
     assert.equal(unknown.status, 1, `${unknown.stdout}\n${unknown.stderr}`);
     const diagnostic = machineRecord(unknown.stdout).errors[0];
-    assert.equal(diagnostic.code, 'scene.entry.unknown');
+    assert.equal(diagnostic.code, 'ref.unresolved');
     assert.equal(diagnostic.params.actual, 'scene.not-registered');
+    assert.equal(diagnostic.params.refKind, 'scene');
+    assert.deepEqual(diagnostic.params.providedBy, []);
     assert.deepEqual(diagnostic.params.expected, [
       'scene.main-menu', 'scene.state-motion', 'scene.test-author',
     ]);
+    assert.equal(machineRecord(unknown.stdout).errors.length, 1);
+
+    const japanese = runCli(['validate', specPath, '--lang', 'ja']);
+    assert.equal(japanese.status, 1, `${japanese.stdout}\n${japanese.stderr}`);
+    const japaneseDiagnostic = machineRecord(japanese.stdout).errors[0];
+    assert.equal(japaneseDiagnostic.code, diagnostic.code);
+    assert.deepEqual(japaneseDiagnostic.params, diagnostic.params);
+    assert.equal(japaneseDiagnostic.catalogKey, diagnostic.catalogKey);
+    assert.ok(japaneseDiagnostic.message.length > 0);
+    assert.match(japaneseDiagnostic.message, /[\u3040-\u30ff\u4e00-\u9fff]/u);
   } finally {
     rmSync(buildDir, { recursive: true, force: true });
   }
+});
+
+test('module-scene example validates, resolves its declared owner and renders the module scene', { timeout: 180_000 }, () => {
+  const specPath = 'examples/module-scene.game.yaml';
+  const moduleId = 'synapse.example.modulescene';
+  const sceneId = 'scene.example.module-workshop';
+  const shotPath = join(TEST_DIR, 'module-scene-example.png');
+  mkdirSync(TEST_DIR, { recursive: true });
+
+  const validation = runCli(['validate', specPath, '--lang', 'en']);
+  assert.equal(validation.status, 0, `${validation.stdout}\n${validation.stderr}`);
+  const validationRecord = machineRecord(validation.stdout);
+  assert.equal(validationRecord.ok, true);
+  assert.equal(validationRecord.entryScene, sceneId);
+
+  const resolution = runCli(['resolve', specPath, '--lang', 'en']);
+  assert.equal(resolution.status, 0, `${resolution.stdout}\n${resolution.stderr}`);
+  const resolutionRecord = machineRecord(resolution.stdout);
+  assert.deepEqual(resolutionRecord.order, [moduleId]);
+  assert.deepEqual(resolutionRecord.sceneEntries, [{
+    id: sceneId,
+    resource: 'res://runtime/scenes/module_scene_example.tscn',
+    moduleId,
+  }]);
+
+  const execution = runCli(['run', specPath, '--frames', '60', '--shot', shotPath, '--lang', 'en']);
+  assert.equal(execution.status, 0, `${execution.stdout}\n${execution.stderr}`);
+  const executionRecord = machineRecord(execution.stdout);
+  assert.equal(executionRecord.code, 'cli.run.complete');
+  assert.equal(executionRecord.marker, 'frames=60');
+  assert.equal(executionRecord.params.scene, sceneId);
+  assert.equal(executionRecord.params.shot, shotPath);
+  const png = readFileSync(shotPath);
+  assert.deepEqual(png.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [960, 540]);
 });
 
 test('unknown semantic scene returns a machine-readable path/expected/actual error', { timeout: 60_000 }, () => {
@@ -687,8 +734,10 @@ test('unknown semantic scene returns a machine-readable path/expected/actual err
   const result = runCli(['run', specPath, '--frames', '1', '--shot', join(TEST_DIR, 'unknown.png')]);
   assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
   const diagnostic = machineRecord(result.stdout).errors[0];
-  assert.equal(diagnostic.code, 'scene.entry.unknown');
+  assert.equal(diagnostic.code, 'ref.unresolved');
   assert.equal(diagnostic.params.path, '/entry/scene');
+  assert.equal(diagnostic.params.refKind, 'scene');
+  assert.deepEqual(diagnostic.params.providedBy, []);
   assert.deepEqual(diagnostic.params.expected, ['scene.main-menu', 'scene.state-motion']);
   assert.equal(diagnostic.params.actual, 'scene.not-registered');
 });
