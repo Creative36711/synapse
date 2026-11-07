@@ -211,7 +211,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 		}
 		if not renderer_record.is_empty():
 			actual["renderer_record"] = {"code": renderer_record.get("code", ""), "params": renderer_record.get("params", {})}
-		_emit_catalog_error("cli.run.render_failed", {"path": "/--shot", "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": actual}, 1, locale, "errors.runtime.engine.missing")
+		_emit_catalog_error("cli.run.render_failed", {"path": "/--shot", "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": actual, "engine": "Godot renderer"}, 1, locale, "errors.runtime.engine.missing")
 		return
 
 	var png_info := _read_png_info(shot_path)
@@ -395,7 +395,7 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 				print(line)
 			quit(capture_exit if capture_exit > 0 else 1)
 		else:
-			_emit_catalog_error("cli.run.render_failed", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": {"exit_code": capture_exit, "reason": "state_capture_process_failed"}}, 1, locale, "errors.runtime.engine.missing")
+			_emit_catalog_error("cli.run.render_failed", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": {"exit_code": capture_exit, "reason": "state_capture_process_failed"}, "engine": "Godot renderer"}, 1, locale, "errors.runtime.engine.missing")
 		return false
 	var capture_record := _parse_json_output(capture_output)
 	var state_bytes := FileAccess.get_file_as_bytes(state_path)

@@ -337,6 +337,7 @@ exit 42
     assert.equal(record.params.actual.renderer_record.code, 'test.renderer.failure');
     assert.equal(record.params.actual.renderer_record.params.reason, 'fixture_failure');
     assert.ok(record.message.length > 0);
+    assert.doesNotMatch(record.message, /\{[A-Za-z][A-Za-z0-9_]*\}/);
     assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127/);
   } finally {
     rmSync(isolatedPath, { recursive: true, force: true });
