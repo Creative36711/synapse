@@ -1,0 +1,37 @@
+# Deterministic top-down arena demo; a local example module owns its scene registration.
+specVersion: "1.0"
+game:
+  id: "example.arena"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.arena"
+modules:
+  - id: "synapse.example.arena"
+    version: "1.0.0"
+entities:
+  - id: "entity.arena.player"
+    properties:
+      role: "player"
+      x: 120
+      y: 270
+      speed: 4
+      win_target: 3
+  - id: "entity.arena.item-one"
+    properties:
+      role: "collectible"
+      x: 220
+      y: 270
+      value: 1
+  - id: "entity.arena.item-two"
+    properties:
+      role: "collectible"
+      x: 280
+      y: 270
+      value: 1
+  - id: "entity.arena.item-three"
+    properties:
+      role: "collectible"
+      x: 340
+      y: 270
+      value: 1

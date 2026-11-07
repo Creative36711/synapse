@@ -13,6 +13,7 @@ const GODOT_PATH = `${dirname(GODOT)}:${process.env.PATH ?? ''}`;
 const TEST_DIR = '/tmp/synapse-k33-cli-test';
 const STATE_TEST_DIR = '/tmp/synapse-k39-state-test';
 const STATE_MOTION_TEST_DIR = '/tmp/synapse-k42-state-motion-test';
+const ARENA_TEST_DIR = '/tmp/synapse-k44-arena-test';
 const SHOT_PATH = join(TEST_DIR, 'minimal.png');
 const SUPPORTED_LOCALES = ['en', 'ru', 'zh-Hans', 'ja', 'pt-BR', 'de', 'fr', 'ko'];
 
@@ -20,6 +21,21 @@ function runCli(args) {
   return spawnSync(GODOT, [
     '--headless', '--path', 'game', '--script', 'res://cli/main.gd', '--', ...args,
   ], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    timeout: 120_000,
+    env: { ...process.env, PATH: GODOT_PATH, SYNAPSE_GODOT_MODE: 'offscreen' },
+  });
+}
+
+function runArenaRuntime(frameCount, shotPath, entityDefinitions, inputPath = undefined) {
+  const args = [
+    '--path', 'game', '--script', 'res://runtime/render_game.gd', '--',
+    'res://runtime/scenes/arena.tscn', String(frameCount), shotPath,
+    Buffer.from(JSON.stringify(entityDefinitions)).toString('base64'),
+  ];
+  if (inputPath !== undefined) args.push(inputPath);
+  return spawnSync(GODOT, args, {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     timeout: 120_000,
@@ -96,6 +112,101 @@ test('run validates the GameSpec, processes 120 frames and produces deterministi
   assert.deepEqual(secondPng.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   assert.ok(secondPng.readUInt32BE(16) > 0);
   assert.ok(secondPng.readUInt32BE(20) > 0);
+});
+
+test('arena GameSpec produces a locale-independent state fingerprint with movement, collection, and victory', { timeout: 240_000 }, () => {
+  rmSync(ARENA_TEST_DIR, { recursive: true, force: true });
+  mkdirSync(ARENA_TEST_DIR, { recursive: true });
+
+  const runArena = (frames, locale, suffix) => {
+    const shotPath = join(ARENA_TEST_DIR, `${suffix}.png`);
+    const statePath = join(ARENA_TEST_DIR, `${suffix}.json`);
+    const result = runCli([
+      'run', 'examples/arena.game.yaml', '--frames', String(frames), '--shot', shotPath,
+      '--lang', locale, '--state', statePath,
+    ]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const record = machineRecord(result.stdout);
+    assert.equal(record.code, 'cli.run.complete');
+    assert.equal(record.params.scene, 'scene.arena');
+    assert.equal(record.params.frames, frames);
+    const png = readFileSync(shotPath);
+    assert.deepEqual(png.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    assert.equal(png.readUInt32BE(16), 960);
+    assert.equal(png.readUInt32BE(20), 540);
+    const bytes = readFileSync(statePath);
+    const document = assertFingerprintOmitsRunMetadata(bytes, [shotPath, statePath]);
+    assert.equal(document.format, 'synapse.world-state.v1');
+    assert.equal(document.scene, 'scene.arena');
+    return { bytes, document, png };
+  };
+  const playerProperties = (document) => {
+    const pending = [document.nodes];
+    while (pending.length > 0) {
+      const node = pending.pop();
+      const properties = node.properties.entity_properties;
+      if (node.properties.entity_id === 'entity.arena.player') return properties;
+      pending.push(...node.children);
+    }
+    assert.fail('arena snapshot must contain the player entity');
+  };
+
+  const frame0 = runArena(1, 'en', 'frame-0');
+  const frame60 = runArena(60, 'en', 'frame-60');
+  const frame120 = runArena(120, 'en', 'frame-120');
+  const initialPlayer = playerProperties(frame0.document);
+  const middlePlayer = playerProperties(frame60.document);
+  const winningPlayer = playerProperties(frame120.document);
+  assert.deepEqual([initialPlayer.x, initialPlayer.y, initialPlayer.score], [120, 270, 0]);
+  assert.deepEqual([middlePlayer.x, middlePlayer.y, middlePlayer.score], [352, 270, 3]);
+  assert.deepEqual([winningPlayer.x, winningPlayer.y, winningPlayer.score, winningPlayer.won], [360, 430, 3, true]);
+  assert.notDeepEqual(frame0.bytes, frame60.bytes);
+  assert.notDeepEqual(frame60.bytes, frame120.bytes);
+
+  for (const locale of ['de', 'ru', 'zh-Hans']) {
+    const localized = runArena(120, locale, `locale-${locale}`);
+    assert.deepEqual(localized.bytes, frame120.bytes, `${locale} must produce identical world-state bytes`);
+  }
+  const repeat = runArena(120, 'en', 'repeat-120');
+  assert.deepEqual(repeat.bytes, frame120.bytes, 'repeating the same run must preserve state bytes');
+  assert.deepEqual(repeat.png, frame120.png, 'repeating the same run must preserve PNG bytes');
+});
+
+test('arena runtime applies deterministic JSON input and reports a missing input file structurally', { timeout: 120_000 }, () => {
+  rmSync(ARENA_TEST_DIR, { recursive: true, force: true });
+  mkdirSync(ARENA_TEST_DIR, { recursive: true });
+  const entities = [{
+    id: 'entity.arena.player',
+    properties: { role: 'player', x: 120, y: 270, speed: 4, win_target: 3 },
+  }];
+  const inputPath = join(ARENA_TEST_DIR, 'actions.json');
+  const emptyInputPath = join(ARENA_TEST_DIR, 'empty-actions.json');
+  writeFileSync(inputPath, JSON.stringify({ actions: [
+    { frame: 0, action: 'move_right' },
+    { frame: 1, action: 'move_right' },
+    { frame: 2, action: 'move_down' },
+  ] }));
+  writeFileSync(emptyInputPath, JSON.stringify({ actions: [] }));
+
+  const inputShot = join(ARENA_TEST_DIR, 'input.png');
+  const repeatShot = join(ARENA_TEST_DIR, 'input-repeat.png');
+  const emptyShot = join(ARENA_TEST_DIR, 'empty-input.png');
+  const inputRun = runArenaRuntime(4, inputShot, entities, inputPath);
+  assert.equal(inputRun.status, 0, `${inputRun.stdout}\n${inputRun.stderr}`);
+  assert.equal(machineRecord(inputRun.stdout).code, 'game.run.frames_complete');
+  const repeatRun = runArenaRuntime(4, repeatShot, entities, inputPath);
+  assert.equal(repeatRun.status, 0, `${repeatRun.stdout}\n${repeatRun.stderr}`);
+  assert.deepEqual(readFileSync(repeatShot), readFileSync(inputShot));
+
+  const emptyRun = runArenaRuntime(4, emptyShot, entities, emptyInputPath);
+  assert.equal(emptyRun.status, 0, `${emptyRun.stdout}\n${emptyRun.stderr}`);
+  assert.notDeepEqual(readFileSync(emptyShot), readFileSync(inputShot), 'JSON actions must affect rendered state');
+
+  const missingRun = runArenaRuntime(4, join(ARENA_TEST_DIR, 'missing.png'), entities, join(ARENA_TEST_DIR, 'absent.json'));
+  assert.equal(missingRun.status, 1, `${missingRun.stdout}\n${missingRun.stderr}`);
+  const missingDiagnostic = machineRecord(missingRun.stdout);
+  assert.equal(missingDiagnostic.code, 'runtime.input.read_failed');
+  assert.equal(missingDiagnostic.params.actual, 'file_not_found');
 });
 
 test('validate and resolve remain machine-readable through the public Godot CLI', { timeout: 60_000 }, () => {
