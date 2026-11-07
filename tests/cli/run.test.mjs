@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -267,19 +267,29 @@ test('missing GameSpec files produce localized spec.file.missing records without
 });
 
 test('missing Node.js produces cli.dependency.node_missing with localized stable params', { timeout: 60_000 }, () => {
-  const results = {};
-  for (const locale of ['en', 'ja']) {
-    const result = runCli(['validate', 'examples/minimal.game.yaml', '--lang', locale], { PATH: '/usr/bin:/bin' });
-    assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
-    results[locale] = machineRecord(result.stdout);
-    assert.equal(results[locale].code, 'cli.dependency.node_missing');
-    assert.equal(results[locale].catalogKey, 'errors.cli.dependency.node-missing');
-    assert.ok(results[locale].message.length > 0);
-    assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|node: not found/i);
+  const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-no-node-'));
+  try {
+    for (const utility of ['bash', 'dirname']) {
+      const source = process.env.PATH.split(':').map((directory) => join(directory, utility)).find((candidate) => existsSync(candidate));
+      assert.ok(source, `${utility} must be available to launch the bundled Godot wrapper`);
+      symlinkSync(source, join(isolatedPath, utility));
+    }
+    const results = {};
+    for (const locale of ['en', 'ja']) {
+      const result = runCli(['validate', 'examples/minimal.game.yaml', '--lang', locale], { PATH: isolatedPath });
+      assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+      results[locale] = machineRecord(result.stdout);
+      assert.equal(results[locale].code, 'cli.dependency.node_missing');
+      assert.equal(results[locale].catalogKey, 'errors.cli.dependency.node-missing');
+      assert.ok(results[locale].message.length > 0);
+      assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|node: not found/i);
+    }
+    assert.deepEqual(results.ja.params, results.en.params);
+    assert.equal(results.ja.catalogKey, results.en.catalogKey);
+    assert.notEqual(results.ja.message, results.en.message);
+  } finally {
+    rmSync(isolatedPath, { recursive: true, force: true });
   }
-  assert.deepEqual(results.ja.params, results.en.params);
-  assert.equal(results.ja.catalogKey, results.en.catalogKey);
-  assert.notEqual(results.ja.message, results.en.message);
 });
 
 test('missing Godot produces runtime.engine.missing instead of render_failed or 127', { timeout: 120_000 }, () => {
