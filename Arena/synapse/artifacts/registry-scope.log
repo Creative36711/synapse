@@ -1,0 +1,2 @@
+Command: git diff --exit-code -- game/runtime/scene_registry.gd
+RESULT: scene_registry.gd unchanged; remains the core scene map

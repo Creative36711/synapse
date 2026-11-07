@@ -1,0 +1,2 @@
+Command: rg -n "scene\\.test-author|synapse\\.test|sceneEntries|provides\\.sceneEntries|moduleId" game/runtime
+RESULT: no module scene IDs or sceneEntries/moduleId references in game/runtime
