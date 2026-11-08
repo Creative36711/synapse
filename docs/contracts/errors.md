@@ -54,6 +54,7 @@
 | `scene.duplicate` | semantic | K-3 | path, expected, actual, sceneId, modules | `errors.scene.duplicate` | один ID сцены сопоставлен ресурсу дважды |
 | `scene.resource.missing` | semantic | K-3 | path, expected, actual, sceneId, resource | `errors.scene.resource.missing` | ресурса `res://…tscn` из `sceneEntries` нет |
 | `spec.file.missing` | semantic | K-3 | path, expected, actual, file | `errors.spec.file.missing` | файл спецификации не читается |
+| `actions.file.missing` | semantic | K-3 | path, expected, actual, file | `errors.actions.file.missing` | файл действий для `run --input` не читается |
 | `runtime.engine.missing` | semantic | K-3 | path, expected, actual, engine | `errors.runtime.engine.missing` | движок `run` недоступен или не отрендерил сцену |
 | `cli.dependency.node-missing` | semantic | K-3 | path, expected, actual, dependency, requiredVersion | `errors.cli.dependency.node-missing` | нет Node.js, проверка не выполнена |
 | `cli.usage` | semantic | K-3 | path, expected, actual, command | `errors.cli.usage` | CLI вызван без допустимой команды |

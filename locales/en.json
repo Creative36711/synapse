@@ -20,6 +20,7 @@
   "errors.scene.duplicate": "Scene ID {actual} is registered more than once at {path}.",
   "errors.scene.resource.missing": "Scene resource {actual} is missing at {path}.",
   "errors.spec.file.missing": "Specification file {file} could not be read at {path}; expected {expected}, got {actual}.",
+  "errors.actions.file.missing": "Actions file {file} could not be read at {path}; expected {expected}, got {actual}.",
   "errors.runtime.engine.missing": "Runtime engine {engine} is unavailable at {path}; expected {expected}, got {actual}.",
   "errors.cli.dependency.node-missing": "Required CLI dependency {dependency} is unavailable at {path}; required {requiredVersion}, got {actual}.",
   "ui.minigame.score": "Score: {score}",
