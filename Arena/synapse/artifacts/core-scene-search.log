@@ -1,4 +1,0 @@
-Command: rg -n --pcre2 [quoted scene IDs] game/runtime
-game/runtime/scene_registry.gd:4:	"scene.main-menu": "res://runtime/scenes/main_menu.tscn",
-game/runtime/scene_registry.gd:5:	"scene.state-motion": "res://runtime/scenes/state_motion.tscn",
-RESULT: only scene literals are core IDs in scene_registry.gd

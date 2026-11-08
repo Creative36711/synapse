@@ -1,8 +1,0 @@
-Command: npm run i18n-no-literals
-
-> synapse-contracts@0.1.0 i18n-no-literals
-> node tools/i18n/no-literals.mjs
-
-i18n-no-literals: paths=game/**/*.gd,game/**/*.tscn,game/**/*.{mjs,js,cjs},cli/**/*.{mjs,js,cjs}
-i18n-no-literals: files=game/cli/main.gd,game/cli/main.tscn,game/i18n/index.mjs,game/modules/resolver.mjs,game/runtime/entity_instance.gd,game/runtime/render_game.gd,game/runtime/scene_registry.gd,game/runtime/scenes/main_menu.tscn,game/runtime/scenes/state_motion.gd,game/runtime/scenes/state_motion.tscn,game/theme/font_stack.gd,game/theme/render_locale.gd,game/theme/render_locale.tscn,game/theme/verify_font_stack.gd,game/validation/validator.mjs
-i18n-no-literals: scanned=15 user-facing-literals=0

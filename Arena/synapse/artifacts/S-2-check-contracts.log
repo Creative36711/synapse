@@ -1,3 +1,0 @@
-Command: node tests/contracts/check-contracts.mjs
-contract-check: files=6 tests=93 pass=93 fail=0
-contract-check: ok

@@ -1,8 +1,0 @@
-Command: node --check on modified/new JavaScript modules and tests
-node --check game/modules/resolver.mjs
-node --check game/validation/validator.mjs
-node --check tests/cli/run.test.mjs
-node --check tests/modules/resolver.test.mjs
-node --check tests/i18n/diagnostics.test.mjs
-node --check tests/runtime/entity_instances.test.mjs
-RESULT: all JavaScript syntax checks passed

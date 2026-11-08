@@ -2,3 +2,5 @@
 .godot/
 # Node dependencies (contract checks only)
 node_modules/
+# Generated reports and logs are stored in Drive, not Git
+Arena/
