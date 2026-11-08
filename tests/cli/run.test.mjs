@@ -216,22 +216,87 @@ test('public run --input applies deterministic actions and localizes a missing i
 
   const missingPath = join(ARENA_TEST_DIR, 'absent.json');
   const missingArgs = [...base, '--shot', join(ARENA_TEST_DIR, 'missing.png'), '--input', missingPath];
-  const missingEnglish = runCli([...missingArgs, '--lang', 'en']);
-  assert.equal(missingEnglish.status, 1, `${missingEnglish.stdout}\n${missingEnglish.stderr}`);
-  const englishDiagnostic = machineRecord(missingEnglish.stdout);
-  assert.equal(englishDiagnostic.code, 'spec.file.missing');
-  assert.equal(englishDiagnostic.catalogKey, 'errors.spec.file.missing');
-  assert.equal(englishDiagnostic.params.file, missingPath);
-  assert.ok(englishDiagnostic.message.includes(missingPath));
-  assert.doesNotMatch(`${missingEnglish.stdout}\n${missingEnglish.stderr}`, /ENOENT|127/);
+  const missingDiagnostics = {};
+  let missingEnglish;
+  let missingGerman;
+  for (const locale of SUPPORTED_LOCALES) {
+    const result = runCli([...missingArgs, '--lang', locale]);
+    assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+    const diagnostic = machineRecord(result.stdout);
+    missingDiagnostics[locale] = diagnostic;
+    assert.equal(diagnostic.code, 'actions.file.missing');
+    assert.equal(diagnostic.catalogKey, 'errors.actions.file.missing');
+    assert.equal(diagnostic.params.path, '/--input');
+    assert.equal(diagnostic.params.file, missingPath);
+    assert.ok(diagnostic.params.expected && Object.keys(diagnostic.params.expected).length > 0);
+    assert.ok(diagnostic.params.actual);
+    assert.equal(diagnostic.params.actual, missingPath);
+    assert.ok(diagnostic.message.length > 0);
+    assert.ok(diagnostic.message.includes(missingPath));
+    assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|SCRIPT ERROR|Stack Trace/i);
 
-  const missingGerman = runCli([...missingArgs, '--lang', 'de']);
-  assert.equal(missingGerman.status, 1, `${missingGerman.stdout}\n${missingGerman.stderr}`);
-  const germanDiagnostic = machineRecord(missingGerman.stdout);
-  assert.equal(germanDiagnostic.code, englishDiagnostic.code);
-  assert.deepEqual(germanDiagnostic.params, englishDiagnostic.params);
-  assert.equal(germanDiagnostic.catalogKey, englishDiagnostic.catalogKey);
-  assert.notEqual(germanDiagnostic.message, englishDiagnostic.message, 'diagnostic text must use the selected locale');
+    if (locale === 'en') {
+      missingEnglish = diagnostic;
+    } else {
+      assert.equal(diagnostic.code, missingEnglish.code);
+      assert.equal(diagnostic.catalogKey, missingEnglish.catalogKey);
+      assert.equal(result.status, 1);
+      assert.deepEqual(diagnostic.params, missingEnglish.params);
+    }
+    if (locale === 'de') missingGerman = diagnostic;
+  }
+  assert.notEqual(missingGerman.message, missingEnglish.message, 'diagnostic text must use the selected locale');
+  assert.equal(Object.keys(missingDiagnostics).length, SUPPORTED_LOCALES.length);
+
+  const unreadablePath = join(ARENA_TEST_DIR, 'unreadable.json');
+  writeFileSync(unreadablePath, JSON.stringify({ actions: [] }));
+  chmodSync(unreadablePath, 0);
+  try {
+    let unreadableEnglish;
+    for (const locale of SUPPORTED_LOCALES) {
+      const result = runCli([
+        ...base, '--shot', join(ARENA_TEST_DIR, `unreadable-${locale}.png`),
+        '--input', unreadablePath, '--lang', locale,
+      ]);
+      assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+      const diagnostic = machineRecord(result.stdout);
+      assert.equal(diagnostic.code, 'actions.file.missing');
+      assert.equal(diagnostic.catalogKey, 'errors.actions.file.missing');
+      assert.equal(diagnostic.params.path, '/--input');
+      assert.equal(diagnostic.params.file, unreadablePath);
+      assert.ok(diagnostic.params.expected && Object.keys(diagnostic.params.expected).length > 0);
+      assert.ok(diagnostic.params.actual);
+      assert.equal(diagnostic.params.actual, unreadablePath);
+      assert.ok(diagnostic.message.length > 0);
+      assert.ok(diagnostic.message.includes(unreadablePath));
+      assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|SCRIPT ERROR|Stack Trace/i);
+      if (locale === 'en') {
+        unreadableEnglish = diagnostic;
+      } else {
+        assert.equal(diagnostic.code, unreadableEnglish.code);
+        assert.equal(diagnostic.catalogKey, unreadableEnglish.catalogKey);
+        assert.equal(result.status, 1);
+        assert.deepEqual(diagnostic.params, unreadableEnglish.params);
+      }
+    }
+  } finally {
+    chmodSync(unreadablePath, 0o600);
+  }
+
+  const missingSpec = join(ARENA_TEST_DIR, 'missing.game.yaml');
+  const missingSpecRun = runCli([
+    'run', missingSpec, '--frames', '4', '--shot', join(ARENA_TEST_DIR, 'missing-spec.png'),
+    '--input', missingPath, '--lang', 'en',
+  ]);
+  assert.equal(missingSpecRun.status, 1, `${missingSpecRun.stdout}\n${missingSpecRun.stderr}`);
+  const specDiagnostic = machineRecord(missingSpecRun.stdout);
+  assert.equal(specDiagnostic.code, 'spec.file.missing');
+  assert.equal(specDiagnostic.catalogKey, 'errors.spec.file.missing');
+  assert.equal(specDiagnostic.params.path, '/spec');
+  assert.equal(specDiagnostic.params.file, missingSpec);
+  assert.equal(specDiagnostic.params.expected, 'readable file');
+  assert.equal(specDiagnostic.params.actual, 'not_found');
+  assert.doesNotMatch(`${missingSpecRun.stdout}\n${missingSpecRun.stderr}`, /ENOENT|127|SCRIPT ERROR|Stack Trace/i);
 
   const invalidPath = runCli([...base, '--shot', join(ARENA_TEST_DIR, 'invalid.png'), '--input', 'relative.json']);
   assert.equal(invalidPath.status, 2);

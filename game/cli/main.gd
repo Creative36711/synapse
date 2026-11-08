@@ -260,11 +260,11 @@ func _read_input_actions(path: String, locale: String) -> Dictionary:
 		return {"ok": false}
 	var normalized_path := path.simplify_path()
 	if not FileAccess.file_exists(normalized_path):
-		_emit_catalog_error("spec.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
+		_emit_catalog_error("actions.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
 		return {"ok": false}
 	var input_file := FileAccess.open(normalized_path, FileAccess.READ)
 	if input_file == null:
-		_emit_catalog_error("spec.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
+		_emit_catalog_error("actions.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
 		return {"ok": false}
 	var parsed_input = JSON.parse_string(input_file.get_as_text())
 	input_file.close()
