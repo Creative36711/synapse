@@ -9,6 +9,7 @@ const STATE_VIEW_SIZE := Vector2i(960, 540)
 const SceneRegistry = preload("res://runtime/scene_registry.gd")
 const EntityInstance = preload("res://runtime/entity_instance.gd")
 const MAX_RUN_FRAMES := 3600
+const SUPPORTED_LOCALES := ["en", "ru", "zh-Hans", "ja", "pt-BR", "de", "fr", "ko"]
 
 
 func _initialize() -> void:
@@ -29,13 +30,17 @@ func _initialize() -> void:
 			args.append(user_args[index])
 			index += 1
 
+	if not locale_missing and locale not in SUPPORTED_LOCALES:
+		_emit_catalog_error("field.enum", {"path": "/--locale", "expected": SUPPORTED_LOCALES, "actual": locale}, 2, "en")
+		return
+
 	if not args.is_empty() and args[0] == STATE_CAPTURE_ARG:
 		call_deferred("_capture_world_state", args.slice(1))
 		return
 
 	var node_executable := _find_executable("node")
 	if node_executable.is_empty():
-		_emit_node_missing(locale, "not_found")
+		_emit_node_dependency_missing(locale, "not_found")
 		return
 	if not args.is_empty() and args[0] == "run":
 		_run_game(args.slice(1), locale, node_executable)
@@ -62,7 +67,7 @@ func _initialize() -> void:
 	var output: Array = []
 	var exit_code := OS.execute(node_executable, command, output, true)
 	if exit_code < 0 or exit_code == 127 or (exit_code == 1 and args.size() >= 2 and args[0] in ["validate", "resolve"] and _parse_json_output(output).is_empty()):
-		_emit_node_missing(locale, "execution_failed")
+		_emit_node_dependency_missing(locale, "execution_failed")
 		return
 	for line in output:
 		print(line)
@@ -162,7 +167,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 	var validation_exit := OS.execute(node_executable, validator_command, validation_output, true)
 	var validation_result := _parse_json_output(validation_output)
 	if validation_exit < 0 or validation_exit == 127 or validation_result.is_empty():
-		_emit_node_missing(locale, "execution_failed")
+		_emit_node_dependency_missing(locale, "execution_failed")
 		return
 	if validation_exit != 0 or not bool(validation_result.get("ok", false)):
 		for line in validation_output:
@@ -211,7 +216,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 		}
 		if not renderer_record.is_empty():
 			actual["renderer_record"] = {"code": renderer_record.get("code", ""), "params": renderer_record.get("params", {})}
-		_emit_catalog_error("cli.run.render_failed", {"path": "/--shot", "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": actual, "engine": "Godot renderer"}, 1, locale, "errors.runtime.engine.missing")
+		_emit_catalog_error("runtime.engine.missing", {"path": "/--shot", "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": actual, "engine": "Godot renderer"}, 1, locale)
 		return
 
 	var png_info := _read_png_info(shot_path)
@@ -313,7 +318,7 @@ func _ensure_spec_file(path: String, locale: String) -> bool:
 	return true
 
 
-func _emit_node_missing(locale: String, actual: String) -> void:
+func _emit_node_dependency_missing(locale: String, actual: String) -> void:
 	var params := {
 		"path": "/cli",
 		"expected": "Node.js >=20.19.0",
@@ -321,11 +326,11 @@ func _emit_node_missing(locale: String, actual: String) -> void:
 		"dependency": "Node.js",
 		"requiredVersion": ">=20.19.0",
 	}
-	_emit_catalog_error("cli.dependency.node_missing", params, 1, locale, "errors.cli.dependency.node-missing")
+	_emit_catalog_error("cli.dependency.node-missing", params, 1, locale)
 
 
-func _emit_catalog_error(code: String, params: Dictionary, exit_code: int, locale: String, catalog_key: String = "") -> void:
-	var selected_catalog_key := catalog_key if not catalog_key.is_empty() else "errors." + code
+func _emit_catalog_error(code: String, params: Dictionary, exit_code: int, locale: String) -> void:
+	var selected_catalog_key := "errors." + code
 	var record := {"code": code, "params": params, "catalogKey": selected_catalog_key}
 	var message := _localized_catalog_message(locale, selected_catalog_key, params)
 	if not message.is_empty():
@@ -388,19 +393,25 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 	]
 	var capture_output: Array = []
 	var capture_exit := _execute_offscreen(godot_executable, capture_command, capture_output, true)
-	if capture_exit != 0:
-		var capture_record := _parse_json_output(capture_output)
-		if not capture_record.is_empty():
-			for line in capture_output:
-				print(line)
-			quit(capture_exit if capture_exit > 0 else 1)
-		else:
-			_emit_catalog_error("cli.run.render_failed", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": {"exit_code": capture_exit, "reason": "state_capture_process_failed"}, "engine": "Godot renderer"}, 1, locale, "errors.runtime.engine.missing")
-		return false
 	var capture_record := _parse_json_output(capture_output)
+	if capture_exit != 0:
+		var capture_actual := {
+			"exit_code": capture_exit,
+			"reason": "state_capture_process_failed",
+		}
+		if not capture_record.is_empty():
+			capture_actual["renderer_record"] = {"code": capture_record.get("code", ""), "params": capture_record.get("params", {})}
+		_emit_catalog_error("runtime.engine.missing", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": capture_actual, "engine": "Godot state capture"}, 1, locale)
+		return false
 	var state_bytes := FileAccess.get_file_as_bytes(state_path)
 	if capture_record.get("code") != "cli.run.state.complete" or state_bytes.is_empty():
-		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"file_written": true}, "actual": "capture_output_or_file_missing"}, 1)
+		var capture_actual := {
+			"exit_code": capture_exit,
+			"reason": "state_capture_output_or_file_missing",
+			"renderer_record": {"code": capture_record.get("code", "missing"), "params": capture_record.get("params", {})},
+			"state_file_bytes": state_bytes.size(),
+		}
+		_emit_catalog_error("runtime.engine.missing", {"path": "/--state", "expected": {"state_capture": "cli.run.state.complete", "file_written": true}, "actual": capture_actual, "engine": "Godot state capture"}, 1, locale)
 		return false
 	return true
 
