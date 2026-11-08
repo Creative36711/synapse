@@ -73,7 +73,7 @@
 ## Доказательства
 
 Команды, коды возврата и полные логи прогонов — в отчёте карточки и в
-`Arena/synapse/artifacts`. Базовый срез до правок: `check:contracts` 82/82, `test:contracts` 82,
+каталоге Google Drive `Arena/synapse/artifacts/` (не в репозитории). Базовый срез до правок: `check:contracts` 82/82, `test:contracts` 82,
 `test:validation` 16, `test:modules` 12, `test:i18n` 18, `test:deps` 8, `i18n-check` 8×17/17,
 `tests/cli` 11.
 
@@ -119,7 +119,7 @@
 
 ### Доказательства
 
-Команды, коды возврата и полные логи — в отчёте карточки и в `Arena/synapse/artifacts`. Реестр после
+Команды, коды возврата и полные логи — в отчёте карточки и в каталоге Google Drive `Arena/synapse/artifacts/` (не в репозитории). Реестр после
 правок: 23 кода. Правки: `schema/error-registry.json`, `docs/contracts/errors.md`,
 `docs/contracts/localization.md`, новый `tests/contracts/cli-diagnostics.test.mjs`.
 
