@@ -1,0 +1,239 @@
+{
+  "format": "synapse.world-state.v2",
+  "scene": "scene.main-menu",
+  "fingerprintScope": {
+    "slices": [
+      "rules",
+      "presentation"
+    ],
+    "fields": {
+      "rules": [
+        "scene",
+        "rules.frame",
+        "rules.nodes[].class",
+        "rules.nodes[].path",
+        "rules.nodes[].properties.process_mode",
+        "rules.nodes[].properties.visible",
+        "rules.nodes[].properties.z_index",
+        "rules.nodes[].properties.modulate",
+        "rules.nodes[].properties.self_modulate",
+        "rules.nodes[].properties.position",
+        "rules.nodes[].properties.rotation",
+        "rules.nodes[].properties.scale",
+        "rules.nodes[].properties.skew",
+        "rules.nodes[].properties.anchors",
+        "rules.nodes[].properties.offsets",
+        "rules.nodes[].properties.size",
+        "rules.nodes[].properties.pivot_offset",
+        "rules.nodes[].properties.mouse_filter",
+        "rules.nodes[].properties.clip_contents",
+        "rules.nodes[].properties.color",
+        "rules.nodes[].properties.polygon",
+        "rules.nodes[].properties.entity_id",
+        "rules.nodes[].properties.entity_properties"
+      ],
+      "presentation": [
+        "presentation.locale",
+        "presentation.nodes[].path",
+        "presentation.nodes[].properties.text",
+        "presentation.nodes[].properties.tooltip_text",
+        "presentation.nodes[].properties.title"
+      ]
+    },
+    "rule": "within-version-by-slice"
+  },
+  "rules": {
+    "frame": 60,
+    "hash": "cb42514d0e644393709a6262a2bc5521ec149d4f5303e932077b03ed396db094",
+    "nodes": {
+      "class": "Control",
+      "path": ".",
+      "properties": {
+        "anchors": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "clip_contents": false,
+        "modulate": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "mouse_filter": 0,
+        "offsets": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "pivot_offset": [
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0
+        ],
+        "process_mode": 0,
+        "rotation": 0,
+        "scale": [
+          1,
+          1
+        ],
+        "self_modulate": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "size": [
+          960,
+          540
+        ],
+        "visible": true,
+        "z_index": 0
+      },
+      "children": [
+        {
+          "class": "ColorRect",
+          "path": "Backdrop",
+          "properties": {
+            "anchors": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "clip_contents": false,
+            "color": [
+              0.1,
+              0.12,
+              0.16,
+              1
+            ],
+            "modulate": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "mouse_filter": 2,
+            "offsets": [
+              0,
+              0,
+              960,
+              540
+            ],
+            "pivot_offset": [
+              0,
+              0
+            ],
+            "position": [
+              0,
+              0
+            ],
+            "process_mode": 0,
+            "rotation": 0,
+            "scale": [
+              1,
+              1
+            ],
+            "self_modulate": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "size": [
+              960,
+              540
+            ],
+            "visible": true,
+            "z_index": 0
+          },
+          "children": []
+        },
+        {
+          "class": "Label",
+          "path": "ScoreLabel",
+          "properties": {
+            "anchors": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "clip_contents": false,
+            "modulate": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "mouse_filter": 2,
+            "offsets": [
+              304,
+              22,
+              604,
+              50
+            ],
+            "pivot_offset": [
+              0,
+              0
+            ],
+            "position": [
+              304,
+              22
+            ],
+            "process_mode": 0,
+            "rotation": 0,
+            "scale": [
+              1,
+              1
+            ],
+            "self_modulate": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "size": [
+              300,
+              28
+            ],
+            "visible": true,
+            "z_index": 0
+          },
+          "children": []
+        }
+      ]
+    },
+    "locale": "en"
+  },
+  "presentation": {
+    "locale": "en",
+    "hash": "e0113cbcdebc1d573ed8b41d624acaad1f64a58cadcf6b5fa18370fa2358ffc1",
+    "nodes": [
+      {
+        "path": "ScoreLabel",
+        "properties": {
+          "text": "Score: {score}"
+        }
+      },
+      {
+        "path": "ScoreLabel",
+        "properties": {
+          "tooltip_text": "Points collected in this run."
+        }
+      }
+    ]
+  },
+  "artifact": {
+    "algorithm": "sha256",
+    "subject": "document-without-artifact",
+    "hash": "d7f43c9c8ec3222b189b4d43cd7829d355977a1daea8a381d40d993f9700b8c0"
+  }
+}

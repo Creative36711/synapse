@@ -14,7 +14,13 @@ import { parseDocument } from 'yaml';
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 /** Наборы контрактных примеров: имя -> каталог с cases.json. */
-export const CASE_SETS = ['gamespec', 'module-manifest', 'error-registry'];
+export const CASE_SETS = [
+  'gamespec',
+  'module-manifest',
+  'error-registry',
+  'world-state-v1',
+  'world-state-v2',
+];
 
 export const ERRORS_DOC = join(REPO_ROOT, 'docs/contracts/errors.md');
 export const DECISIONS_DOC = join(REPO_ROOT, 'docs/decisions/SYN-1.md');

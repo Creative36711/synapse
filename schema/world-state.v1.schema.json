@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.synapse.invalid/world-state/v1",
+  "title": "Отпечаток мира synapse.world-state.v1 (восстановлен по текущему эмиттеру)",
+  "$comment": "Историческая форма: ровно то, что писал эмиттер `run --state` на 6cff12a. Схема восстановлена по game/cli/main.gd (`STATE_FORMAT`, `_capture_world_state`, `_snapshot_node`) и проверена на документе, снятом этим эмиттером (schema/examples/world-state-v1/emitter-arena-frames-1.json). Формат не меняется: документы SYN-1/SYN-2 остаются валидными. Ни локали, ни текста, ни кадра в v1 нет — поэтому равенство двух v1-документов ничего не говорит о картинке (F-1); для сравнений вводится v2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "scene", "nodes"],
+  "properties": {
+    "format": {
+      "const": "synapse.world-state.v1"
+    },
+    "scene": {
+      "$ref": "#/$defs/sceneRef"
+    },
+    "nodes": {
+      "$ref": "#/$defs/node"
+    }
+  },
+  "$defs": {
+    "sceneRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Смысловой ID сцены из GameSpec, а не путь к ресурсу (INV-3)."
+    },
+    "nodePath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Путь узла от корня сцены; корень — \".\". Совпадает с тем, что пишет эмиттер (scene_root.get_path_to)."
+    },
+    "className": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$",
+      "description": "Имя класса Godot как его возвращает get_class(); закрытый список классов контрактом не фиксируется — фиксируется форма имени."
+    },
+    "vec2": {
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "vec4": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "entityProperties": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
+      },
+      "description": "Свойства сущности из определения: только примитивы (INV-4)."
+    },
+    "v1Properties": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Набор свойств v1 — ровно то, что снимает эмиттер. Локали, текста, кадра и хешей здесь нет и появиться не может: это форма v1.",
+      "properties": {
+        "process_mode": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "visible": { "type": "boolean" },
+        "z_index": { "type": "integer" },
+        "modulate": { "$ref": "#/$defs/vec4" },
+        "self_modulate": { "$ref": "#/$defs/vec4" },
+        "position": { "$ref": "#/$defs/vec2" },
+        "rotation": { "type": "number" },
+        "scale": { "$ref": "#/$defs/vec2" },
+        "skew": { "type": "number" },
+        "anchors": { "$ref": "#/$defs/vec4" },
+        "offsets": { "$ref": "#/$defs/vec4" },
+        "size": { "$ref": "#/$defs/vec2" },
+        "pivot_offset": { "$ref": "#/$defs/vec2" },
+        "mouse_filter": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "clip_contents": { "type": "boolean" },
+        "color": { "$ref": "#/$defs/vec4" },
+        "polygon": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/vec2" }
+        },
+        "entity_id": { "type": "string" },
+        "entity_properties": { "$ref": "#/$defs/entityProperties" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "path", "properties", "children"],
+      "properties": {
+        "class": { "$ref": "#/$defs/className" },
+        "path": { "$ref": "#/$defs/nodePath" },
+        "properties": { "$ref": "#/$defs/v1Properties" },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" }
+        }
+      }
+    }
+  }
+}
