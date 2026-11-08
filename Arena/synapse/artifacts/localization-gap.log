@@ -1,2 +1,0 @@
-Command: rg -n "errors\\.scene\\.(entry\\.unknown|duplicate|resource\\.missing)" locales/*.json
-RESULT: translations absent from locales (intentionally not edited under explicit scope restriction)

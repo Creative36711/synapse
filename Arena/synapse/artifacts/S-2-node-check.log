@@ -1,1 +1,0 @@
-Command: bash -lc for file in tools/i18n/check.mjs tools/i18n/no-literals.mjs tests/i18n/catalogs.test.mjs tests/i18n/diagnostics.test.mjs tests/i18n/no-literals.test.mjs; do node --check "$file"; done

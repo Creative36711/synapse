@@ -1,3 +1,0 @@
-Command: git rev-parse HEAD; git diff --exit-code HEAD; git status --short --untracked-files=no
-HEAD_SHA=b1edfcddfb2f8ceb1dadfa6d70373ab1790a231f
-RESULT: tracked source tree matches the tested HEAD_SHA.
