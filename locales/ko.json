@@ -20,6 +20,7 @@
   "errors.scene.duplicate": "{path}에서 장면 ID {actual}이(가) 중복 등록되었습니다.",
   "errors.scene.resource.missing": "{path}에 장면 리소스 {actual}이(가) 없습니다.",
   "errors.spec.file.missing": "{path}의 사양 파일 {file}을(를) 읽을 수 없습니다. 예상값: {expected}, 실제값: {actual}.",
+  "errors.actions.file.missing": "{path}에서 액션 파일 {file}을(를) 읽을 수 없습니다. 예상값: {expected}, 실제값: {actual}.",
   "errors.runtime.engine.missing": "{path}에서 런타임 엔진 {engine}을(를) 사용할 수 없습니다. 예상값: {expected}, 실제값: {actual}.",
   "errors.cli.dependency.node-missing": "{path}에서 CLI 종속성 {dependency}을(를) 사용할 수 없습니다. 필수 버전: {requiredVersion}, 실제값: {actual}.",
   "ui.minigame.score": "점수: {score}",

@@ -20,6 +20,7 @@
   "errors.scene.duplicate": "路径 {path} 上的场景 ID {actual} 被重复注册。",
   "errors.scene.resource.missing": "路径 {path} 上缺少场景资源 {actual}。",
   "errors.spec.file.missing": "无法读取路径 {path} 上的规格文件 {file}；预期 {expected}，实际为 {actual}。",
+  "errors.actions.file.missing": "无法读取路径 {path} 上的动作文件 {file}；预期 {expected}，实际为 {actual}。",
   "errors.runtime.engine.missing": "路径 {path} 上无法使用运行时引擎 {engine}；预期 {expected}，实际为 {actual}。",
   "errors.cli.dependency.node-missing": "路径 {path} 上无法使用 CLI 依赖 {dependency}；需要 {requiredVersion}，实际为 {actual}。",
   "ui.minigame.score": "得分：{score}",

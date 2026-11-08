@@ -195,6 +195,15 @@
       "catalogKey": "errors.spec.file.missing"
     },
     {
+      "code": "actions.file.missing",
+      "stage": "semantic",
+      "implementedIn": "K-3",
+      "summary": "Файл действий для прогона run --input отсутствует или не читается: путь передан, но открыть файл не удалось. Это не файл GameSpec: спецификация к этому моменту уже прочитана, поэтому отдельный код отличает промах в --input от промаха в спецификации.",
+      "params": ["path", "expected", "actual"],
+      "extraParams": ["file"],
+      "catalogKey": "errors.actions.file.missing"
+    },
+    {
       "code": "runtime.engine.missing",
       "stage": "semantic",
       "implementedIn": "K-3",

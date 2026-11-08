@@ -20,6 +20,7 @@
   "errors.scene.duplicate": "Die Szenen-ID {actual} ist unter {path} mehrfach registriert.",
   "errors.scene.resource.missing": "Die Szenenressource {actual} fehlt unter {path}.",
   "errors.spec.file.missing": "Die Spezifikationsdatei {file} konnte unter {path} nicht gelesen werden; erwartet {expected}, erhalten {actual}.",
+  "errors.actions.file.missing": "Die Aktionsdatei {file} konnte unter {path} nicht gelesen werden; erwartet {expected}, erhalten {actual}.",
   "errors.runtime.engine.missing": "Die Laufzeit-Engine {engine} ist unter {path} nicht verfügbar; erwartet {expected}, erhalten {actual}.",
   "errors.cli.dependency.node-missing": "Die CLI-Abhängigkeit {dependency} ist unter {path} nicht verfügbar; benötigt {requiredVersion}, erhalten {actual}.",
   "ui.minigame.score": "Punktzahl: {score}",

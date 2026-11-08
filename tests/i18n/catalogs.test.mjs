@@ -17,7 +17,7 @@ test('all eight production catalogs cover registered diagnostics and mini-game U
   const report = checkProductionCatalogs();
   assert.equal(report.ok, true, formatReport(report));
   assert.deepEqual(Object.keys(catalogs).sort(), [...SUPPORTED_LOCALES].sort());
-  assert.equal(report.baseKeys.length, 29);
+  assert.equal(report.baseKeys.length, 30);
   for (const entry of registry.codes) assert.ok(report.baseKeys.includes(`errors.${entry.code}`));
   for (const key of [
     'ui.minigame.score', 'ui.minigame.win_condition', 'ui.minigame.controls_hint',
@@ -25,7 +25,7 @@ test('all eight production catalogs cover registered diagnostics and mini-game U
   ]) assert.ok(report.baseKeys.includes(key));
   for (const locale of SUPPORTED_LOCALES) {
     const result = report.results.find((entry) => entry.locale === locale);
-    assert.deepEqual([result.present, result.total, result.coverage], [29, 29, 1]);
+    assert.deepEqual([result.present, result.total, result.coverage], [30, 30, 1]);
     assert.deepEqual(result.missing, []);
     assert.deepEqual(Object.keys(catalogs[locale]).sort(), report.baseKeys);
   }

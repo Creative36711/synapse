@@ -20,6 +20,7 @@
   "errors.scene.duplicate": "Идентификатор сцены {actual} повторно зарегистрирован по пути {path}.",
   "errors.scene.resource.missing": "Ресурс сцены {actual} отсутствует по пути {path}.",
   "errors.spec.file.missing": "Не удалось прочитать файл спецификации {file} по пути {path}: ожидалось {expected}, получено {actual}.",
+  "errors.actions.file.missing": "Файл действий {file} не читается по пути {path}: ожидалось {expected}, получено {actual}.",
   "errors.runtime.engine.missing": "Среда выполнения {engine} недоступна по пути {path}: ожидалось {expected}, получено {actual}.",
   "errors.cli.dependency.node-missing": "Зависимость CLI {dependency} недоступна по пути {path}: требуется {requiredVersion}, обнаружено {actual}.",
   "ui.minigame.score": "Счёт: {score}",
