@@ -1,0 +1,34 @@
+{
+  "$comment": "v1 — форма, которую писал эмиттер run --state на 6cff12a. emitter-arena-frames-1.json снят этим эмиттером байт в байт и служит доказательством, что схема описывает именно то, что пишет код, а не пожелание. Формат v1 не меняется: документы SYN-1/SYN-2 остаются валидными (D-058).",
+  "schema": "../../world-state.v1.schema.json",
+  "valid": [
+    "emitter-arena-frames-1.json",
+    "minimal.json"
+  ],
+  "invalid": [
+    {
+      "file": "invalid/frame-in-v1.json",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/frame"
+    },
+    {
+      "file": "invalid/text-in-v1.json",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/nodes/children/0/properties/text"
+    },
+    {
+      "file": "invalid/no-nodes.json",
+      "code": "field.required",
+      "keyword": "required",
+      "path": "/nodes"
+    },
+    {
+      "file": "invalid/format-typo.json",
+      "code": "field.enum",
+      "keyword": "const",
+      "path": "/format"
+    }
+  ]
+}

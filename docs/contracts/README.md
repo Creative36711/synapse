@@ -18,10 +18,13 @@
 | `docs/contracts/scene-binding.md` | для автора: как объявить сцену и сущность, что увидит `run`, что значит каждая ошибка |
 | `docs/contracts/errors.md` | контракт ошибки: `code` + `params`, реестр кодов, ключи каталога |
 | `docs/contracts/localization.md` | локали, ключи каталога, почему текст не живёт в контракте |
+| `docs/contracts/world-state.md` | отпечаток мира: срезы `rules` и `presentation`, `artifact`, нормализация и правило сравнения |
 | `schema/gamespec.schema.json` | JSON Schema 2020-12 для GameSpec |
 | `schema/module-manifest.schema.json` | JSON Schema 2020-12 для манифеста модуля |
 | `schema/error-registry.json` | реестр кодов ошибок (машинный) |
 | `schema/error-registry.schema.json` | JSON Schema 2020-12 для самого реестра |
+| `schema/world-state.v1.schema.json` | JSON Schema 2020-12 для отпечатка мира: восстановленная форма текущего эмиттера |
+| `schema/world-state.v2.schema.json` | JSON Schema 2020-12 для отпечатка мира из двух объявленных срезов |
 | `schema/examples/<контракт>/` | валидные и невалидные примеры + `cases.json` |
 | `schema/examples/scene-binding/` | фикстуры семантических правил связи сцен и сущностей (`scene.*`, `spec.file.missing`, `runtime.engine.missing`, `cli.dependency.node-missing`) |
 | `tests/contracts/` | проверка контрактов (Node, `node --test`) |

@@ -1,0 +1,57 @@
+{
+  "format": "synapse.world-state",
+  "scene": "scene.main-menu",
+  "nodes": {
+    "class": "Control",
+    "path": ".",
+    "properties": {
+      "anchors": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "clip_contents": false,
+      "modulate": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "mouse_filter": 0,
+      "offsets": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "pivot_offset": [
+        0,
+        0
+      ],
+      "position": [
+        0,
+        0
+      ],
+      "process_mode": 0,
+      "rotation": 0,
+      "scale": [
+        1,
+        1
+      ],
+      "self_modulate": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "size": [
+        960,
+        540
+      ],
+      "visible": true,
+      "z_index": 0
+    },
+    "children": []
+  }
+}

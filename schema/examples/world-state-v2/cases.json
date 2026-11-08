@@ -1,0 +1,49 @@
+{
+  "$comment": "v2 — форма по D-058: два объявленных среза (rules, presentation) и artifact. Примеры — не картинки ради картинки: translation.* и locale-geometry.* это негативные фикстуры (б) и (а) из docs/contracts/world-state.md, а tests/contracts/world-state.test.mjs проверяет на них правило сравнения: rules равны при переводе и различаются, если геометрия поехала от локали.",
+  "schema": "../../world-state.v2.schema.json",
+  "valid": [
+    "valid/translation.en.json",
+    "valid/translation.de.json",
+    "valid/locale-geometry.en.json",
+    "valid/locale-geometry.de.json",
+    "valid/frame-0.en.json"
+  ],
+  "invalid": [
+    {
+      "file": "invalid/text-in-rules.json",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/rules/nodes/children/1/properties/text"
+    },
+    {
+      "file": "invalid/locale-in-rules.json",
+      "code": "field.unknown",
+      "keyword": "additionalProperties",
+      "path": "/rules/locale"
+    },
+    {
+      "file": "invalid/no-scope.json",
+      "code": "field.required",
+      "keyword": "required",
+      "path": "/fingerprintScope"
+    },
+    {
+      "file": "invalid/bad-hash.json",
+      "code": "field.pattern",
+      "keyword": "pattern",
+      "path": "/rules/hash"
+    },
+    {
+      "file": "invalid/empty-presentation-node.json",
+      "code": "field.required",
+      "keyword": "minProperties",
+      "path": "/presentation/nodes/0/properties"
+    },
+    {
+      "file": "invalid/format-v1.json",
+      "code": "field.enum",
+      "keyword": "const",
+      "path": "/format"
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.synapse.invalid/world-state/v2",
+  "title": "Отпечаток мира synapse.world-state.v2 (два объявленных среза)",
+  "$comment": "Форма v2 по D-058: один документ несёт срез rules (frame, геометрия, visible, состояние сущностей — без локали и без текста), срез presentation (locale, text, tooltip_text, title) и artifact (полный хеш — только идентичность, в доказательстве INV-12 не участвует). Поля обоих срезов перечислены в fingerprintScope; сравнение допустимо только внутри одной версии и только по объявленному срезу. Канонизация и правило хеша — docs/contracts/world-state.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "scene", "fingerprintScope", "rules", "presentation", "artifact"],
+  "properties": {
+    "format": {
+      "const": "synapse.world-state.v2"
+    },
+    "scene": {
+      "$ref": "#/$defs/sceneRef"
+    },
+    "fingerprintScope": {
+      "$ref": "#/$defs/fingerprintScope"
+    },
+    "rules": {
+      "$ref": "#/$defs/rulesSlice"
+    },
+    "presentation": {
+      "$ref": "#/$defs/presentationSlice"
+    },
+    "artifact": {
+      "$ref": "#/$defs/artifact"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 в нижнем регистре, без префикса. Что именно хешируется — в docs/contracts/world-state.md."
+    },
+    "sceneRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Смысловой ID сцены из GameSpec, а не путь к ресурсу (INV-3)."
+    },
+    "nodePath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Путь узла от корня сцены; корень — \".\"."
+    },
+    "className": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$"
+    },
+    "vec2": {
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "vec4": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "entityProperties": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
+      }
+    },
+    "rulesProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Свойства среза rules. Полей presentation (text, tooltip_text, title) здесь нет по построению: они не входят в срез правил.",
+      "properties": {
+        "process_mode": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "visible": { "type": "boolean" },
+        "z_index": { "type": "integer" },
+        "modulate": { "$ref": "#/$defs/vec4" },
+        "self_modulate": { "$ref": "#/$defs/vec4" },
+        "position": { "$ref": "#/$defs/vec2" },
+        "rotation": { "type": "number" },
+        "scale": { "$ref": "#/$defs/vec2" },
+        "skew": { "type": "number" },
+        "anchors": { "$ref": "#/$defs/vec4" },
+        "offsets": { "$ref": "#/$defs/vec4" },
+        "size": { "$ref": "#/$defs/vec2" },
+        "pivot_offset": { "$ref": "#/$defs/vec2" },
+        "mouse_filter": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "clip_contents": { "type": "boolean" },
+        "color": { "$ref": "#/$defs/vec4" },
+        "polygon": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/vec2" }
+        },
+        "entity_id": { "type": "string" },
+        "entity_properties": { "$ref": "#/$defs/entityProperties" }
+      }
+    },
+    "rulesNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "path", "properties", "children"],
+      "properties": {
+        "class": { "$ref": "#/$defs/className" },
+        "path": { "$ref": "#/$defs/nodePath" },
+        "properties": { "$ref": "#/$defs/rulesProperties" },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/rulesNode" }
+        }
+      }
+    },
+    "presentationProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "Только переводимые поля. Пустой объект запрещён: узел без текста в presentation не попадает вовсе.",
+      "properties": {
+        "text": { "type": "string" },
+        "tooltip_text": { "type": "string" },
+        "title": { "type": "string" }
+      }
+    },
+    "presentationNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "properties"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nodePath" },
+        "properties": { "$ref": "#/$defs/presentationProperties" }
+      }
+    },
+    "rulesFields": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "scene",
+          "rules.frame",
+          "rules.nodes[].class",
+          "rules.nodes[].path",
+          "rules.nodes[].properties.process_mode",
+          "rules.nodes[].properties.visible",
+          "rules.nodes[].properties.z_index",
+          "rules.nodes[].properties.modulate",
+          "rules.nodes[].properties.self_modulate",
+          "rules.nodes[].properties.position",
+          "rules.nodes[].properties.rotation",
+          "rules.nodes[].properties.scale",
+          "rules.nodes[].properties.skew",
+          "rules.nodes[].properties.anchors",
+          "rules.nodes[].properties.offsets",
+          "rules.nodes[].properties.size",
+          "rules.nodes[].properties.pivot_offset",
+          "rules.nodes[].properties.mouse_filter",
+          "rules.nodes[].properties.clip_contents",
+          "rules.nodes[].properties.color",
+          "rules.nodes[].properties.polygon",
+          "rules.nodes[].properties.entity_id",
+          "rules.nodes[].properties.entity_properties"
+        ]
+      }
+    },
+    "presentationFields": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "presentation.locale",
+          "presentation.nodes[].path",
+          "presentation.nodes[].properties.text",
+          "presentation.nodes[].properties.tooltip_text",
+          "presentation.nodes[].properties.title"
+        ]
+      }
+    },
+    "fingerprintScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slices", "fields", "rule"],
+      "description": "Объявленный состав отпечатка: имена срезов, поля каждого среза и правило сравнения.",
+      "properties": {
+        "slices": {
+          "type": "array",
+          "prefixItems": [{ "const": "rules" }, { "const": "presentation" }],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rules", "presentation"],
+          "properties": {
+            "rules": { "$ref": "#/$defs/rulesFields" },
+            "presentation": { "$ref": "#/$defs/presentationFields" }
+          }
+        },
+        "rule": {
+          "const": "within-version-by-slice",
+          "description": "Сравнивать можно только документы одной версии и только по объявленному срезу."
+        }
+      }
+    },
+    "rulesSlice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame", "hash", "nodes"],
+      "properties": {
+        "frame": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Сколько кадров просимулировано до снятия отпечатка. В v1 кадра не было."
+        },
+        "hash": { "$ref": "#/$defs/sha256" },
+        "nodes": { "$ref": "#/$defs/rulesNode" }
+      }
+    },
+    "presentationSlice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locale", "hash", "nodes"],
+      "properties": {
+        "locale": {
+          "enum": ["en", "ru", "zh-Hans", "ja", "pt-BR", "de", "fr", "ko"]
+        },
+        "hash": { "$ref": "#/$defs/sha256" },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/presentationNode" }
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "subject", "hash"],
+      "description": "Хеш всего документа без самого члена artifact. Только идентичность: в доказательстве INV-12 он не участвует и между локалями не сравнивается.",
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "subject": { "const": "document-without-artifact" },
+        "hash": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}
