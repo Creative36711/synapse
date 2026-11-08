@@ -56,6 +56,18 @@ godot --headless --path game --script res://cli/main.gd -- resolve examples/mini
 godot --headless --path game --script res://cli/main.gd -- run examples/minimal.game.yaml --frames 120 --shot /tmp/synapse.png --locale en
 ```
 
+### CLI regression tests
+
+`npm run test:cli` launches the Godot public CLI. Godot must be available as `godot` on `PATH` or via
+`GODOT_BIN` (absolute path); install the bundled engine first if needed:
+
+```bash
+tools/godot/install.sh
+PATH="/tmp/synapse-godot/bin:$PATH" npm run test:cli
+# Alternatively:
+GODOT_BIN=/tmp/synapse-godot/bin/godot npm run test:cli
+```
+
 The subcommands are `validate`, `resolve`, and `run`. `--locale <locale>` selects the diagnostic
 locale (default `en`) for validation, including validation performed by `run`; `--lang <locale>` is
 an exact alias with identical parsing, values, diagnostics, and return codes. The O-10 command above

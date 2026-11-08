@@ -20,10 +20,8 @@ const LOCALES_DIR = join(REPO_ROOT, 'locales');
 const DECISION_S10 = join(REPO_ROOT, 'docs/decisions/SYN-2.md');
 const SUPPORTED_LOCALES = ['en', 'ru', 'zh-Hans', 'ja', 'pt-BR', 'de', 'fr', 'ko'];
 
-// Расхождения, подтверждённые аудитом на BASE_SHA f821d0e5 и переданные карточке зоны `game/**`.
-// Список обязан совпадать с разделом S-10 в docs/decisions/SYN-2.md — это проверяет последний тест.
-const KNOWN_CODE_DEVIATIONS = ['cli.dependency.node_missing', 'cli.run.render_failed'];
-const KNOWN_CATALOG_OVERRIDES = ['errors.cli.dependency.node-missing', 'errors.runtime.engine.missing'];
+const KNOWN_CODE_DEVIATIONS = [];
+const KNOWN_CATALOG_OVERRIDES = [];
 
 const localeCatalog = (locale) => readJson(join(LOCALES_DIR, `${locale}.json`));
 

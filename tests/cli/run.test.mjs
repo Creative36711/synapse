@@ -266,7 +266,7 @@ test('missing GameSpec files produce localized spec.file.missing records without
   assert.notEqual(results.ja.message, results.en.message);
 });
 
-test('missing Node.js produces cli.dependency.node_missing with localized stable params', { timeout: 60_000 }, () => {
+test('missing Node.js produces cli.dependency.node-missing with localized stable params', { timeout: 60_000 }, () => {
   const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-no-node-'));
   try {
     for (const utility of ['bash', 'dirname']) {
@@ -279,7 +279,7 @@ test('missing Node.js produces cli.dependency.node_missing with localized stable
       const result = runCli(['validate', 'examples/minimal.game.yaml', '--lang', locale], { PATH: isolatedPath });
       assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
       results[locale] = machineRecord(result.stdout);
-      assert.equal(results[locale].code, 'cli.dependency.node_missing');
+      assert.equal(results[locale].code, 'cli.dependency.node-missing');
       assert.equal(results[locale].catalogKey, 'errors.cli.dependency.node-missing');
       assert.ok(results[locale].message.length > 0);
       assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|node: not found/i);
@@ -292,7 +292,7 @@ test('missing Node.js produces cli.dependency.node_missing with localized stable
   }
 });
 
-test('missing Godot produces runtime.engine.missing instead of render_failed or 127', { timeout: 120_000 }, () => {
+test('missing Godot produces runtime.engine.missing without leaking the engine exit code', { timeout: 120_000 }, () => {
   const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-no-godot-'));
   try {
     symlinkSync(process.execPath, join(isolatedPath, 'node'));
@@ -308,7 +308,7 @@ test('missing Godot produces runtime.engine.missing instead of render_failed or 
       assert.equal(results[locale].code, 'runtime.engine.missing');
       assert.equal(results[locale].catalogKey, 'errors.runtime.engine.missing');
       assert.ok(results[locale].message.length > 0);
-      assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|render_failed/);
+      assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127/);
     }
     assert.deepEqual(results.ja.params, results.en.params);
     assert.notEqual(results.ja.message, results.en.message);
@@ -317,7 +317,7 @@ test('missing Godot produces runtime.engine.missing instead of render_failed or 
   }
 });
 
-test('cli.run.render_failed retains machine-readable renderer cause in params', { timeout: 120_000 }, () => {
+test('renderer and state-capture failures use runtime.engine.missing with machine-readable causes', { timeout: 120_000 }, () => {
   const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-failing-godot-'));
   try {
     symlinkSync(process.execPath, join(isolatedPath, 'node'));
@@ -332,13 +332,50 @@ exit 42
     ], { PATH: `${isolatedPath}:/usr/bin:/bin` });
     assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
     const record = machineRecord(result.stdout);
-    assert.equal(record.code, 'cli.run.render_failed');
+    assert.equal(record.code, 'runtime.engine.missing');
     assert.equal(record.catalogKey, 'errors.runtime.engine.missing');
+    assert.equal(record.params.path, '/--shot');
+    assert.equal(record.params.actual.exit_code, 42);
     assert.equal(record.params.actual.renderer_record.code, 'test.renderer.failure');
     assert.equal(record.params.actual.renderer_record.params.reason, 'fixture_failure');
     assert.ok(record.message.length > 0);
     assert.doesNotMatch(record.message, /\{[A-Za-z][A-Za-z0-9_]*\}/);
     assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127/);
+
+    const statePath = join(isolatedPath, 'state-capture');
+    mkdirSync(statePath);
+    symlinkSync(process.execPath, join(statePath, 'node'));
+    const failureMarker = join(statePath, 'render-complete');
+    const fakeStateGodot = join(statePath, 'godot');
+    writeFileSync(fakeStateGodot, `#!/bin/sh
+if [ -f "${failureMarker}" ]; then
+  printf '%s\n' '{"code":"test.state.capture.failure","params":{"reason":"fixture_failure"}}'
+  exit 42
+fi
+touch "${failureMarker}"
+exec "$SYNAPSE_REAL_GODOT" "$@"
+`);
+    chmodSync(fakeStateGodot, 0o755);
+    const realGodot = GODOT.includes('/')
+      ? resolve(GODOT)
+      : process.env.PATH.split(':').map((directory) => join(directory, GODOT)).find(existsSync);
+    assert.ok(realGodot, `could not resolve Godot executable: ${GODOT}`);
+    const stateResult = runCli([
+      'run', 'examples/minimal.game.yaml', '--frames', '1',
+      '--shot', join(statePath, 'render.png'), '--state', join(statePath, 'state.json'), '--lang', 'en',
+    ], {
+      PATH: `${statePath}:/usr/bin:/bin`,
+      SYNAPSE_REAL_GODOT: realGodot,
+    });
+    assert.equal(stateResult.status, 1, `${stateResult.stdout}\n${stateResult.stderr}`);
+    const stateRecord = machineRecord(stateResult.stdout);
+    assert.equal(stateRecord.code, 'runtime.engine.missing');
+    assert.equal(stateRecord.catalogKey, 'errors.runtime.engine.missing');
+    assert.equal(stateRecord.params.path, '/--state');
+    assert.equal(stateRecord.params.actual.exit_code, 42);
+    assert.equal(stateRecord.params.actual.renderer_record.code, 'test.state.capture.failure');
+    assert.equal(stateRecord.params.actual.renderer_record.params.reason, 'fixture_failure');
+    assert.ok(stateRecord.message.length > 0);
   } finally {
     rmSync(isolatedPath, { recursive: true, force: true });
   }
@@ -415,8 +452,52 @@ test('missing and unsupported --lang values preserve --locale diagnostics and re
     { status: unsupportedLang.status, stdout: unsupportedLang.stdout, stderr: unsupportedLang.stderr },
     { status: unsupportedLocale.status, stdout: unsupportedLocale.stdout, stderr: unsupportedLocale.stderr },
   );
-  assert.equal(unsupportedLang.status, 1);
-  assert.equal(machineRecord(unsupportedLang.stdout).errors[0].code, 'field.unknown');
+  assert.equal(unsupportedLang.status, 2);
+  const unsupportedDiagnostic = machineRecord(unsupportedLang.stdout);
+  assert.equal(unsupportedDiagnostic.code, 'field.enum');
+  assert.equal(unsupportedDiagnostic.catalogKey, 'errors.field.enum');
+  assert.deepEqual(unsupportedDiagnostic.params, {
+    path: '/--locale',
+    expected: SUPPORTED_LOCALES,
+    actual: 'xx',
+  });
+
+  const invalidArgs = ['validate', 'examples/minimal.game.yaml', '--lang', 'zh_CN'];
+  const invalidLocale = runCli(invalidArgs);
+  assert.equal(invalidLocale.status, 2, `${invalidLocale.stdout}\n${invalidLocale.stderr}`);
+  const invalidDiagnostic = machineRecord(invalidLocale.stdout);
+  assert.equal(invalidDiagnostic.code, 'field.enum');
+  assert.equal(invalidDiagnostic.params.path, '/--locale');
+  assert.deepEqual(invalidDiagnostic.params.expected, SUPPORTED_LOCALES);
+  assert.equal(invalidDiagnostic.params.actual, 'zh_CN');
+  assert.ok(invalidDiagnostic.message.length > 0);
+
+  const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-invalid-locale-no-node-'));
+  try {
+    for (const utility of ['bash', 'dirname']) {
+      const source = process.env.PATH.split(':').map((directory) => join(directory, utility)).find((candidate) => existsSync(candidate));
+      assert.ok(source, `${utility} must be available to launch the bundled Godot wrapper`);
+      symlinkSync(source, join(isolatedPath, utility));
+    }
+    const noNode = runCli(invalidArgs, { PATH: isolatedPath });
+    assert.equal(noNode.status, 2, `${noNode.stdout}\n${noNode.stderr}`);
+    assert.equal(machineRecord(noNode.stdout).code, 'field.enum');
+    assert.deepEqual(machineRecord(noNode.stdout).params, invalidDiagnostic.params);
+
+    symlinkSync(process.execPath, join(isolatedPath, 'node'));
+    const noGodot = runCli([
+      'run', 'examples/minimal.game.yaml', '--frames', '1', '--shot', join(isolatedPath, 'invalid.png'), '--lang', 'zh_CN',
+    ], { PATH: `${isolatedPath}:/usr/bin:/bin` });
+    assert.equal(noGodot.status, 2, `${noGodot.stdout}\n${noGodot.stderr}`);
+    assert.equal(machineRecord(noGodot.stdout).code, 'field.enum');
+    assert.deepEqual(machineRecord(noGodot.stdout).params, invalidDiagnostic.params);
+  } finally {
+    rmSync(isolatedPath, { recursive: true, force: true });
+  }
+
+  const supported = runCli(['validate', 'examples/minimal.game.yaml', '--lang', 'zh-Hans']);
+  assert.equal(supported.status, 0, `${supported.stdout}\n${supported.stderr}`);
+  assert.equal(machineRecord(supported.stdout).ok, true);
 });
 
 test('run still rejects an unknown option with cli.run.option.unknown and rc 2', () => {
