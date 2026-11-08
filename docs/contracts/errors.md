@@ -80,20 +80,36 @@ CLI печатает два вида записей, и правила у них
 определению. Если такую запись нужно показать человеку, её сначала переводят в диагностику: строка в
 реестре, ключ во всех восьми каталогах, `_emit_catalog_error` без override.
 
-### Известные расхождения в `game/cli/main.gd` (BASE_SHA)
+### Закрытые расхождения `game/cli/main.gd` (S-11)
 
-Расхождения зафиксированы аудитом и этой карточкой не исправляются: правка `game/**` — предмет
-отдельной карточки зоны `game/**`. Каждое описано в записи решения с откатом.
+Три расхождения, зафиксированные аудитом на `f821d0e5`, закрыты карточкой S-11: PR
+[#35](https://github.com/Creative36711/synapse/pull/35), merge
+`6b5932146655e42a105c842f04d4fd6c8a3baaee`. Открытых расхождений в диагностике CLI нет.
 
-| Где | Что не так | Целевое состояние |
+| Где | Что было | Состояние кода сейчас |
 |---|---|---|
-| `_emit_node_missing` | код печатается как `cli.dependency.node_missing` (подчёркивание), а реестр знает `cli.dependency.node-missing`; расхождение скрыто override-ключом | код ровно `cli.dependency.node-missing`, без override |
-| `_run_game`, рендер | код `cli.run.render_failed` отсутствует в реестре, а `catalogKey` подменён на `errors.runtime.engine.missing` | случай сообщается кодом `runtime.engine.missing` (он в реестре, ключ есть во всех каталогах), машинные детали — в `params.actual`; override не нужен |
-| `_write_world_state` | тот же override на пути снимка состояния | то же: код `runtime.engine.missing` без override |
+| `_emit_node_missing` | код печатался с подчёркиванием (`cli.dependency.node_missing`), а реестр знает `cli.dependency.node-missing`; расхождение скрывал override пятого аргумента | `game/cli/main.gd:329` печатает `cli.dependency.node-missing` через `_emit_catalog_error` без пятого аргумента — одна форма в реестре, контракте и реализации |
+| `_run_game`, рендер | кода `cli.run.render_failed` не было в реестре, а `catalogKey` подменялся на `errors.runtime.engine.missing` | `game/cli/main.gd:219` сообщает `runtime.engine.missing` (он в реестре, ключ есть во всех восьми каталогах); машинные детали — `exit_code`, `reason`, `renderer_record` — в `params.actual` |
+| `_write_world_state` | тот же override стоял на пути снимка состояния | `game/cli/main.gd:404` и `:414` сообщают `runtime.engine.missing` для `--state`, детали в `params.actual` |
 
-Пока расхождения не закрыты, контрактный тест перечисляет их явно: любой **новый** код мимо реестра
-или **новый** override — провал `check:contracts`. Список расхождений в тесте и в записи решения
-обязан совпадать, поэтому «тихо» расширить список нельзя.
+Четвёртый случай того же класса закрыт там же: имя локали из `--lang`/`--locale` проверяется до
+проверок окружения (`game/cli/main.gd:33`), локаль вне набора — `field.enum` с кодом возврата 2, как
+требует [`localization.md`](localization.md) в разделе «Имя локали вне набора». Подменять
+`catalogKey` больше нечем: в подписи `_emit_catalog_error` (`game/cli/main.gd:332`) остались только
+`code`, `params`, `exit_code`, `locale`.
+
+**Сторож не снят.** Любой код диагностики мимо реестра и любой override каталожного ключа — провал
+`npm run check:contracts`. Списки исключений ведутся в
+[`tests/contracts/cli-diagnostics.test.mjs`](../../tests/contracts/cli-diagnostics.test.mjs)
+(`KNOWN_CODE_DEVIATIONS`, `KNOWN_CATALOG_OVERRIDES`) и в [`../decisions/SYN-2.md`](../decisions/SYN-2.md);
+сейчас оба пусты, и пустой список — это факт «исключений нет», а не отмена проверки: тест сверяет
+список с фактическим содержимым `game/cli/main.gd` в обе стороны, поэтому новый код мимо реестра или
+новая подмена ключа краснеют сразу, а законное исключение требует записи в решении.
+
+Допущение: таблица не удалена целиком, а переписана из «что не так / целевое состояние» в запись
+факта «что было / состояние сейчас» — так у раздела остаётся история решения S-11 и проверяемое
+соответствие строкам кода, а правило `catalogKey = "errors." + code` живёт выше, в разделе
+«Диагностика и машинные записи CLI».
 
 ## Стадии
 
