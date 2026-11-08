@@ -8,8 +8,8 @@ const STATE_FORMAT := "synapse.world-state.v1"
 const STATE_VIEW_SIZE := Vector2i(960, 540)
 const SceneRegistry = preload("res://runtime/scene_registry.gd")
 const EntityInstance = preload("res://runtime/entity_instance.gd")
-const LocaleCatalog = preload("res://runtime/locale_catalog.gd")
 const MAX_RUN_FRAMES := 3600
+const SUPPORTED_LOCALES := ["en", "ru", "zh-Hans", "ja", "pt-BR", "de", "fr", "ko"]
 
 
 func _initialize() -> void:
@@ -30,8 +30,8 @@ func _initialize() -> void:
 			args.append(user_args[index])
 			index += 1
 
-	if not locale_missing and locale not in LocaleCatalog.SUPPORTED_LOCALES:
-		_emit_catalog_error("field.enum", {"path": "/--locale", "expected": LocaleCatalog.SUPPORTED_LOCALES, "actual": locale}, 2, "en")
+	if not locale_missing and locale not in SUPPORTED_LOCALES:
+		_emit_catalog_error("field.enum", {"path": "/--locale", "expected": SUPPORTED_LOCALES, "actual": locale}, 2, "en")
 		return
 
 	if not args.is_empty() and args[0] == STATE_CAPTURE_ARG:
@@ -393,22 +393,25 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 	]
 	var capture_output: Array = []
 	var capture_exit := _execute_offscreen(godot_executable, capture_command, capture_output, true)
-	if capture_exit != 0:
-		var capture_record := _parse_json_output(capture_output)
-		if capture_record.get("code", "") == "cli.run.state.write_failed":
-			for line in capture_output:
-				print(line)
-			quit(capture_exit if capture_exit > 0 else 1)
-			return false
-		var capture_failure_actual := {"exit_code": capture_exit, "reason": "state_capture_process_failed"}
-		if not capture_record.is_empty():
-			capture_failure_actual["renderer_record"] = {"code": capture_record.get("code", ""), "params": capture_record.get("params", {})}
-		_emit_catalog_error("runtime.engine.missing", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": capture_failure_actual, "engine": "Godot renderer"}, 1, locale)
-		return false
 	var capture_record := _parse_json_output(capture_output)
+	if capture_exit != 0:
+		var capture_actual := {
+			"exit_code": capture_exit,
+			"reason": "state_capture_process_failed",
+		}
+		if not capture_record.is_empty():
+			capture_actual["renderer_record"] = {"code": capture_record.get("code", ""), "params": capture_record.get("params", {})}
+		_emit_catalog_error("runtime.engine.missing", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": capture_actual, "engine": "Godot state capture"}, 1, locale)
+		return false
 	var state_bytes := FileAccess.get_file_as_bytes(state_path)
 	if capture_record.get("code") != "cli.run.state.complete" or state_bytes.is_empty():
-		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"file_written": true}, "actual": "capture_output_or_file_missing"}, 1)
+		var capture_actual := {
+			"exit_code": capture_exit,
+			"reason": "state_capture_output_or_file_missing",
+			"renderer_record": {"code": capture_record.get("code", "missing"), "params": capture_record.get("params", {})},
+			"state_file_bytes": state_bytes.size(),
+		}
+		_emit_catalog_error("runtime.engine.missing", {"path": "/--state", "expected": {"state_capture": "cli.run.state.complete", "file_written": true}, "actual": capture_actual, "engine": "Godot state capture"}, 1, locale)
 		return false
 	return true
 
