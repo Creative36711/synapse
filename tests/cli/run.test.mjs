@@ -73,15 +73,23 @@ function assertFingerprintOmitsRunMetadata(bytes, outputPaths) {
   for (const outputPath of outputPaths) {
     assert.ok(!serialized.includes(outputPath), `state must not contain output path ${outputPath}`);
   }
+  // v2 deliberately records locale and simulated frame in separate declared slices.
   assert.doesNotMatch(
     serialized,
-    /"(?:locale|lang|frame|frames|frame_count|timestamp|time|pid|hostname|host|cwd)"\s*:/i,
-    'state must not contain locale or volatile run metadata',
+    /"(?:lang|frames|frame_count|timestamp|time|pid|hostname|host|cwd)"\s*:/i,
+    'state must not contain volatile machine or invocation metadata',
   );
-  assert.ok(!serialized.includes('"en"') && !serialized.includes('"de"'), 'state must not contain locale identifiers');
   const document = JSON.parse(serialized);
   assertCanonicalObjectKeys(document);
-  assertRelativeNodePaths(document.nodes);
+  if (document.format === 'synapse.world-state.v2') {
+    assertRelativeNodePaths(document.rules.nodes);
+    assert.ok(SUPPORTED_LOCALES.includes(document.presentation.locale));
+    for (const node of document.presentation.nodes) {
+      assert.ok(!node.path.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(node.path), `presentation path must be relative: ${node.path}`);
+    }
+  } else {
+    assertRelativeNodePaths(document.nodes);
+  }
   return document;
 }
 
@@ -115,7 +123,7 @@ test('run validates the GameSpec, processes 120 frames and produces deterministi
   assert.ok(secondPng.readUInt32BE(20) > 0);
 });
 
-test('arena GameSpec produces a locale-independent state fingerprint with movement, collection, and victory', { timeout: 240_000 }, () => {
+test('arena GameSpec produces a locale-independent state fingerprint with movement, collection, and victory', { timeout: 600_000 }, () => {
   rmSync(ARENA_TEST_DIR, { recursive: true, force: true });
   mkdirSync(ARENA_TEST_DIR, { recursive: true });
   const inputPath = join(ARENA_TEST_DIR, 'frame-indexed-actions.json');
@@ -142,12 +150,12 @@ test('arena GameSpec produces a locale-independent state fingerprint with moveme
     assert.equal(png.readUInt32BE(20), 540);
     const bytes = readFileSync(statePath);
     const document = assertFingerprintOmitsRunMetadata(bytes, [shotPath, statePath]);
-    assert.equal(document.format, 'synapse.world-state.v1');
+    assert.equal(document.format, 'synapse.world-state.v2');
     assert.equal(document.scene, 'scene.arena');
     return { bytes, document, png };
   };
   const playerProperties = (document) => {
-    const pending = [document.nodes];
+    const pending = [document.rules.nodes];
     while (pending.length > 0) {
       const node = pending.pop();
       const properties = node.properties.entity_properties;
@@ -169,14 +177,76 @@ test('arena GameSpec produces a locale-independent state fingerprint with moveme
   assert.notDeepEqual(frame0.bytes, frame60.bytes);
   assert.notDeepEqual(frame60.bytes, frame120.bytes);
 
-  for (const [locale, localeOption] of [
-    ['ru', '--lang'], ['zh-Hans', '--locale'], ['ja', '--lang'], ['pt-BR', '--lang'],
-    ['de', '--lang'], ['fr', '--lang'], ['ko', '--lang'],
-  ]) {
-    const localized = runArena(120, locale, `locale-${locale}`, localeOption);
-    assert.deepEqual(localized.bytes, frame120.bytes, `${locale} must produce identical world-state bytes`);
-    assert.notDeepEqual(localized.png, frame120.png, `${locale} UI must render localized catalog text`);
+  const frames = [1, 60, 120];
+  const englishByFrame = new Map([[1, frame0], [60, frame60], [120, frame120]]);
+  for (const frame of frames) {
+    assert.equal(englishByFrame.get(frame).document.rules.frame, frame, `rules.frame must equal processed frame count ${frame}`);
   }
+  assert.notDeepEqual(frame0.document.rules, frame60.document.rules, 'rules must differ between frames 1 and 60');
+  assert.notDeepEqual(frame60.document.rules, frame120.document.rules, 'rules must differ between frames 60 and 120');
+
+  for (const locale of SUPPORTED_LOCALES) {
+    const localizedByFrame = [];
+    for (const frame of frames) {
+      const baseline = englishByFrame.get(frame);
+      const localeOption = locale === 'zh-Hans' ? '--locale' : '--lang';
+      const localized = locale === 'en'
+        ? baseline
+        : runArena(frame, locale, `locale-${locale}-${frame}`, localeOption);
+      assert.equal(localized.document.presentation.locale, locale);
+      assert.equal(localized.document.rules.frame, frame);
+      assert.deepEqual(localized.document.rules, baseline.document.rules, `${locale} rules must match en at frame ${frame}`);
+      if (locale !== 'en') {
+        assert.notDeepEqual(localized.document.presentation, baseline.document.presentation, `${locale} presentation slice must differ from en at frame ${frame}`);
+        assert.notDeepEqual(
+          localized.document.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+          baseline.document.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+          `${locale} must translate text, tooltip_text, or title, not only presentation.locale`,
+        );
+        assert.notDeepEqual(localized.png, baseline.png, `${locale} UI must render localized catalog text at frame ${frame}`);
+      }
+      localizedByFrame.push(localized);
+    }
+    assert.notDeepEqual(localizedByFrame[0].document.rules, localizedByFrame[1].document.rules, `${locale} rules must differ between frames 1 and 60`);
+    assert.notDeepEqual(localizedByFrame[1].document.rules, localizedByFrame[2].document.rules, `${locale} rules must differ between frames 60 and 120`);
+  }
+
+  const runWorldStateFixture = (specPath, locale, suffix) => {
+    const shotPath = join(ARENA_TEST_DIR, `${suffix}.png`);
+    const statePath = join(ARENA_TEST_DIR, `${suffix}.json`);
+    const result = runCli([
+      'run', specPath, '--frames', '120', '--shot', shotPath, '--lang', locale, '--state', statePath,
+    ]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const document = assertFingerprintOmitsRunMetadata(readFileSync(statePath), [shotPath, statePath]);
+    assert.equal(document.format, 'synapse.world-state.v2');
+    assert.equal(document.rules.frame, 120);
+    assert.equal(document.presentation.locale, locale);
+    return document;
+  };
+  const geometryEn = runWorldStateFixture('tests/fixtures/world-state/locale-geometry.game.yaml', 'en', 'geometry-en');
+  const geometryDe = runWorldStateFixture('tests/fixtures/world-state/locale-geometry.game.yaml', 'de', 'geometry-de');
+  assert.notDeepEqual(geometryEn.rules, geometryDe.rules, 'translated measured text width must affect rules geometry');
+  const geometryPanel = (document) => {
+    const pending = [document.rules.nodes];
+    while (pending.length > 0) {
+      const node = pending.pop();
+      if (node.path === 'LayoutPanel') return node;
+      pending.push(...node.children);
+    }
+    assert.fail('locale-geometry fixture must contain LayoutPanel');
+  };
+  assert.notEqual(geometryPanel(geometryEn).properties.size[0], geometryPanel(geometryDe).properties.size[0]);
+
+  const translationEn = runWorldStateFixture('tests/fixtures/world-state/plain-translation.game.yaml', 'en', 'translation-en');
+  const translationDe = runWorldStateFixture('tests/fixtures/world-state/plain-translation.game.yaml', 'de', 'translation-de');
+  assert.deepEqual(translationEn.rules, translationDe.rules, 'plain translation must not affect rules');
+  assert.notDeepEqual(translationEn.presentation, translationDe.presentation);
+  assert.notDeepEqual(
+    translationEn.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+    translationDe.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+    'plain translation must change text, tooltip_text, or title, not only locale',
+  );
   const repeat = runArena(120, 'en', 'repeat-120');
   assert.deepEqual(repeat.bytes, frame120.bytes, 'repeating the same run must preserve state bytes');
   assert.deepEqual(repeat.png, frame120.png, 'repeating the same run must preserve PNG bytes');
@@ -592,29 +662,40 @@ test('run --state writes canonical locale-independent fingerprints and records t
 
   const english = run120('en', enShot, enState);
   assert.equal(english.status, 0, `${english.stdout}\n${english.stderr}`);
-  assert.equal(machineRecord(english.stdout).code, 'cli.run.complete');
+  const englishRecord = machineRecord(english.stdout);
+  assert.equal(englishRecord.code, 'cli.run.complete');
   const german = run120('de', deShot, deState);
   assert.equal(german.status, 0, `${german.stdout}\n${german.stderr}`);
   assert.equal(machineRecord(german.stdout).code, 'cli.run.complete');
 
   const enBytes = readFileSync(enState);
   const deBytes = readFileSync(deState);
-  assert.deepEqual(enBytes, deBytes, 'locale must not affect the world-state fingerprint');
+  const enDocument = assertFingerprintOmitsRunMetadata(enBytes, [enShot, enState]);
+  const deDocument = assertFingerprintOmitsRunMetadata(deBytes, [deShot, deState]);
+  assert.equal(enDocument.rules.frame, englishRecord.params.frames);
+  assert.equal(deDocument.rules.frame, machineRecord(german.stdout).params.frames);
+  assert.deepEqual(enDocument.rules, deDocument.rules, 'locale must not affect the declared rules slice');
+  assert.notDeepEqual(enDocument.presentation, deDocument.presentation, 'presentation slice must record localized content');
+  assert.notDeepEqual(
+    enDocument.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+    deDocument.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+    'presentation must differ in text, tooltip_text, or title, not only locale',
+  );
   assert.ok(readFileSync(enShot).length > 24, 'English PNG must be created');
   assert.ok(readFileSync(deShot).length > 24, 'German PNG must be created');
 
   const serialized = enBytes.toString('utf8');
   assert.ok(serialized.endsWith('\n'));
   const document = JSON.parse(serialized);
-  assert.equal(document.format, 'synapse.world-state.v1');
+  assert.equal(document.format, 'synapse.world-state.v2');
   assert.equal(document.scene, 'scene.main-menu');
-  assert.deepEqual(document.nodes.properties.size, [960, 540]);
+  assert.equal(document.rules.frame, 120);
+  assert.deepEqual(document.rules.nodes.properties.size, [960, 540]);
   assertCanonicalObjectKeys(document);
-  assertRelativeNodePaths(document.nodes);
+  assertRelativeNodePaths(document.rules.nodes);
   assert.ok(!serialized.includes(REPO_ROOT), 'state must not contain an absolute repository path');
   assert.ok(!serialized.includes(enShot) && !serialized.includes(enState));
-  assert.doesNotMatch(serialized, /"(?:locale|lang|text|message|timestamp|time|pid|hostname|cwd|frames|frame_count)"/i);
-  assert.doesNotMatch(serialized, /\b(?:en|de)\b/i, 'state must not include locale identifiers or localized strings');
+  assert.doesNotMatch(serialized, /"(?:lang|frames|frame_count|timestamp|time|pid|hostname|cwd)"/i);
 
   const shortShot = join(STATE_TEST_DIR, 'en-60.png');
   const shortState = join(STATE_TEST_DIR, 'en-60.json');
@@ -624,6 +705,9 @@ test('run --state writes canonical locale-independent fingerprints and records t
   ]);
   assert.equal(shortRun.status, 0, `${shortRun.stdout}\n${shortRun.stderr}`);
   assert.ok(readFileSync(shortShot).length > 24, '60-frame PNG must be created');
+  const shortDocument = assertFingerprintOmitsRunMetadata(readFileSync(shortState), [shortShot, shortState]);
+  assert.equal(shortDocument.rules.frame, machineRecord(shortRun.stdout).params.frames);
+  assert.notDeepEqual(shortDocument.rules, enDocument.rules, 'rules slice must distinguish frames 60 and 120');
   const shortHash = createHash('sha256').update(readFileSync(shortState)).digest('hex');
   const longHash = createHash('sha256').update(enBytes).digest('hex');
   const frameStateEqual = shortHash === longHash;
@@ -686,8 +770,9 @@ function runStateMotion(frameCount, locale, suffix) {
 
   const bytes = readFileSync(statePath);
   const document = assertFingerprintOmitsRunMetadata(bytes, [shotPath, statePath]);
-  assert.equal(document.format, 'synapse.world-state.v1');
+  assert.equal(document.format, 'synapse.world-state.v2');
   assert.equal(document.scene, 'scene.state-motion');
+  assert.equal(document.rules.frame, frameCount);
   return { bytes, document, shotPath, statePath };
 }
 
@@ -701,8 +786,8 @@ test('state-motion example changes captured node transform between 60 and 120 fr
   const longHash = createHash('sha256').update(long.bytes).digest('hex');
   assert.notEqual(shortHash, longHash, '60 and 120 frame world states must differ');
 
-  const shortMarker = short.document.nodes.children.find((node) => node.path === 'MotionMarker');
-  const longMarker = long.document.nodes.children.find((node) => node.path === 'MotionMarker');
+  const shortMarker = short.document.rules.nodes.children.find((node) => node.path === 'MotionMarker');
+  const longMarker = long.document.rules.nodes.children.find((node) => node.path === 'MotionMarker');
   assert.ok(shortMarker, 'snapshot must contain MotionMarker');
   assert.ok(longMarker, 'snapshot must contain MotionMarker');
   assert.notDeepEqual(shortMarker.properties.position, longMarker.properties.position);
@@ -720,19 +805,25 @@ test('state-motion example changes captured node transform between 60 and 120 fr
   }));
 });
 
-test('state-motion fingerprint is byte-identical for --lang en and --lang de at 120 frames', { timeout: 180_000 }, () => {
+test('state-motion rules are locale-invariant while presentation is translated at 120 frames', { timeout: 180_000 }, () => {
   rmSync(STATE_MOTION_TEST_DIR, { recursive: true, force: true });
   mkdirSync(STATE_MOTION_TEST_DIR, { recursive: true });
 
   const english = runStateMotion(120, 'en', 'locale-en-120');
   const german = runStateMotion(120, 'de', 'locale-de-120');
-  assert.deepEqual(english.bytes, german.bytes, 'locale must not alter state-motion snapshot bytes');
+  assert.deepEqual(english.document.rules, german.document.rules, 'locale must not alter state-motion rules');
+  assert.notDeepEqual(english.document.presentation, german.document.presentation, 'presentation slice must carry the selected locale');
+  assert.notDeepEqual(
+    english.document.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+    german.document.presentation.nodes.map(({ path, properties }) => ({ path, properties })),
+    'state-motion presentation must differ in text, tooltip_text, or title, not only locale',
+  );
   const englishHash = createHash('sha256').update(english.bytes).digest('hex');
   const germanHash = createHash('sha256').update(german.bytes).digest('hex');
-  assert.equal(englishHash, germanHash);
+  assert.notEqual(englishHash, germanHash, 'artifact bytes include the intentionally different presentation slice');
   console.log(JSON.stringify({
     code: 'test.world_state.locale_invariant',
-    params: { frames: 120, sha256_en: englishHash, sha256_de: germanHash, byte_equal: true },
+    params: { frames: 120, rules_equal: true, artifact_hash_en: english.document.artifact.hash, artifact_hash_de: german.document.artifact.hash },
   }));
 });
 
@@ -795,7 +886,7 @@ test('run resolves a module scene entry and instantiates GameSpec entities from 
     assert.equal(record.params.scene, 'scene.test-author');
 
     const state = JSON.parse(readFileSync(statePath, 'utf8'));
-    const entityNode = state.nodes.children.find((child) => child.properties.entity_id === 'entity.player');
+    const entityNode = state.rules.nodes.children.find((child) => child.properties.entity_id === 'entity.player');
     assert.ok(entityNode, 'runtime snapshot must contain the entity instance');
     assert.deepEqual(entityNode.properties.entity_properties, { health: 100, enabled: true });
 

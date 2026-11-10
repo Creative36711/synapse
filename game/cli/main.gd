@@ -4,10 +4,43 @@ const VALIDATOR_SCRIPT := "res://validation/validator.mjs"
 const RESOLVER_SCRIPT := "res://modules/resolver.mjs"
 const RUNNER_SCRIPT := "res://runtime/render_game.gd"
 const STATE_CAPTURE_ARG := "__capture_state"
-const STATE_FORMAT := "synapse.world-state.v1"
+const STATE_FORMAT := "synapse.world-state.v2"
 const STATE_VIEW_SIZE := Vector2i(960, 540)
 const SceneRegistry = preload("res://runtime/scene_registry.gd")
 const EntityInstance = preload("res://runtime/entity_instance.gd")
+const LocaleCatalog = preload("res://runtime/locale_catalog.gd")
+const RULE_SCOPE_FIELDS := [
+	"scene",
+	"rules.frame",
+	"rules.nodes[].class",
+	"rules.nodes[].path",
+	"rules.nodes[].properties.process_mode",
+	"rules.nodes[].properties.visible",
+	"rules.nodes[].properties.z_index",
+	"rules.nodes[].properties.modulate",
+	"rules.nodes[].properties.self_modulate",
+	"rules.nodes[].properties.position",
+	"rules.nodes[].properties.rotation",
+	"rules.nodes[].properties.scale",
+	"rules.nodes[].properties.skew",
+	"rules.nodes[].properties.anchors",
+	"rules.nodes[].properties.offsets",
+	"rules.nodes[].properties.size",
+	"rules.nodes[].properties.pivot_offset",
+	"rules.nodes[].properties.mouse_filter",
+	"rules.nodes[].properties.clip_contents",
+	"rules.nodes[].properties.color",
+	"rules.nodes[].properties.polygon",
+	"rules.nodes[].properties.entity_id",
+	"rules.nodes[].properties.entity_properties",
+]
+const PRESENTATION_SCOPE_FIELDS := [
+	"presentation.locale",
+	"presentation.nodes[].path",
+	"presentation.nodes[].properties.text",
+	"presentation.nodes[].properties.tooltip_text",
+	"presentation.nodes[].properties.title",
+]
 const MAX_RUN_FRAMES := 3600
 const SUPPORTED_LOCALES := ["en", "ru", "zh-Hans", "ja", "pt-BR", "de", "fr", "ko"]
 
@@ -35,7 +68,7 @@ func _initialize() -> void:
 		return
 
 	if not args.is_empty() and args[0] == STATE_CAPTURE_ARG:
-		call_deferred("_capture_world_state", args.slice(1))
+		call_deferred("_capture_world_state", args.slice(1), locale)
 		return
 
 	var node_executable := _find_executable("node")
@@ -390,6 +423,8 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 		Marshalls.raw_to_base64(JSON.stringify(entity_definitions).to_utf8_buffer()),
 		Marshalls.raw_to_base64(JSON.stringify(input_actions).to_utf8_buffer()),
 		str(input_requested),
+		"--lang",
+		locale,
 	]
 	var capture_output: Array = []
 	var capture_exit := _execute_offscreen(godot_executable, capture_command, capture_output, true)
@@ -416,7 +451,7 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 	return true
 
 
-func _capture_world_state(args: PackedStringArray) -> void:
+func _capture_world_state(args: PackedStringArray, locale: String) -> void:
 	if args.size() != 7:
 		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"arguments": 7}, "actual": args.size()}, 1)
 		return
@@ -462,6 +497,12 @@ func _capture_world_state(args: PackedStringArray) -> void:
 		_emit_error("cli.run.state.capture_failed", {"path": "/entry/scene", "expected": {"instantiable": true}, "actual": scene_id}, 1)
 		return
 	root.size = STATE_VIEW_SIZE
+	var localization := LocaleCatalog.install(locale)
+	if not bool(localization.get("ok", false)):
+		var missing_key := String(localization.get("key", "ui.minigame.score"))
+		_emit_catalog_error("locale.key.missing", {"path": "/locales/" + locale, "expected": missing_key, "actual": null, "locale": locale, "catalog": locale + ".json"}, 1, locale)
+		return
+	root.theme = localization.get("theme")
 	if input_requested and scene_root.has_method("configure_input"):
 		scene_root.call("configure_input", input_actions)
 	root.add_child(scene_root)
@@ -472,31 +513,69 @@ func _capture_world_state(args: PackedStringArray) -> void:
 	var state_document := {
 		"format": STATE_FORMAT,
 		"scene": scene_id,
-		"nodes": _snapshot_node(scene_root, scene_root),
+		"fingerprintScope": {
+			"slices": ["rules", "presentation"],
+			"fields": {"rules": RULE_SCOPE_FIELDS, "presentation": PRESENTATION_SCOPE_FIELDS},
+			"rule": "within-version-by-slice",
+		},
+		"rules": {
+			"frame": frame_count,
+			"nodes": _snapshot_rule_node(scene_root, scene_root),
+		},
+		"presentation": {
+			"locale": locale,
+			"nodes": _snapshot_presentation_nodes(scene_root),
+		},
 	}
-	var state_text := _canonical_json(state_document) + "\n"
 	var directory_error := DirAccess.make_dir_recursive_absolute(state_path.get_base_dir())
 	if directory_error != OK:
 		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"directory_writable": true}, "actual": directory_error}, 1)
 		return
-	var state_file := FileAccess.open(state_path, FileAccess.WRITE)
-	if state_file == null:
+	var raw_state_path := state_path + ".raw"
+	var raw_state_file := FileAccess.open(raw_state_path, FileAccess.WRITE)
+	if raw_state_file == null:
 		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"file_writable": true}, "actual": FileAccess.get_open_error()}, 1)
 		return
-	state_file.store_string(state_text)
-	var write_error := state_file.get_error()
-	state_file.close()
-	if write_error != OK:
-		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"write_error": OK}, "actual": write_error}, 1)
+	raw_state_file.store_string(JSON.stringify(state_document))
+	var raw_write_error := raw_state_file.get_error()
+	raw_state_file.close()
+	if raw_write_error != OK:
+		DirAccess.remove_absolute(raw_state_path)
+		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"write_error": OK}, "actual": raw_write_error}, 1)
+		return
+	var state_file_probe := FileAccess.open(state_path, FileAccess.WRITE)
+	if state_file_probe == null:
+		DirAccess.remove_absolute(raw_state_path)
+		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"file_writable": true}, "actual": FileAccess.get_open_error()}, 1)
+		return
+	state_file_probe.close()
+	var node_executable := _find_executable("node")
+	if node_executable.is_empty():
+		DirAccess.remove_absolute(raw_state_path)
+		_emit_node_dependency_missing(locale, "not_found")
+		return
+	var formatter_output: Array = []
+	var formatter_exit := OS.execute(node_executable, [
+		ProjectSettings.globalize_path("res://runtime/world_state_v2.mjs"),
+		raw_state_path,
+		state_path,
+	], formatter_output, true)
+	DirAccess.remove_absolute(raw_state_path)
+	if formatter_exit != 0:
+		_emit_error("cli.run.state.capture_failed", {"path": "/--state", "expected": {"canonicalizer_exit_code": 0}, "actual": formatter_exit}, 1)
+		return
+	var state_text := FileAccess.get_file_as_string(state_path)
+	if state_text.is_empty():
+		_emit_error("cli.run.state.write_failed", {"path": "/--state", "expected": {"file_written": true}, "actual": "empty"}, 1)
 		return
 	var completion := {
 		"code": "cli.run.state.complete",
-		"params": {"frames": frame_count, "nodes": _count_snapshot_nodes(state_document["nodes"])},
+		"params": {"frames": frame_count, "nodes": _count_snapshot_nodes(state_document["rules"]["nodes"])},
 	}
 	_emit_record(completion, 0)
 
 
-func _snapshot_node(node: Node, scene_root: Node) -> Dictionary:
+func _snapshot_rule_node(node: Node, scene_root: Node) -> Dictionary:
 	var properties := {"process_mode": node.process_mode}
 	if node is CanvasItem:
 		var canvas_item := node as CanvasItem
@@ -536,13 +615,59 @@ func _snapshot_node(node: Node, scene_root: Node) -> Dictionary:
 		properties["entity_properties"] = entity_data.get("properties", {}).duplicate(true)
 	var children: Array = []
 	for child in node.get_children():
-		children.append(_snapshot_node(child, scene_root))
+		children.append(_snapshot_rule_node(child, scene_root))
 	return {
 		"class": node.get_class(),
 		"path": String(scene_root.get_path_to(node)),
 		"properties": properties,
 		"children": children,
 	}
+
+
+func _snapshot_presentation_nodes(scene_root: Node) -> Array:
+	var presentation_nodes: Array = []
+	_append_presentation_node(scene_root, scene_root, presentation_nodes)
+	return presentation_nodes
+
+
+func _append_presentation_node(node: Node, scene_root: Node, output: Array) -> void:
+	var properties: Dictionary = {}
+	if node is Control:
+		var control := node as Control
+		var tooltip := String(control.tooltip_text)
+		if not tooltip.is_empty():
+			properties["tooltip_text"] = tooltip
+	if node is Label:
+		var label_text := String((node as Label).text)
+		if not label_text.is_empty():
+			properties["text"] = label_text
+	elif node is Button:
+		var button_text := String((node as Button).text)
+		if not button_text.is_empty():
+			properties["text"] = button_text
+	elif node is LineEdit:
+		var line_text := String((node as LineEdit).text)
+		if not line_text.is_empty():
+			properties["text"] = line_text
+	elif node is TextEdit:
+		var edit_text := String((node as TextEdit).text)
+		if not edit_text.is_empty():
+			properties["text"] = edit_text
+	elif node is RichTextLabel:
+		var rich_text := String((node as RichTextLabel).text)
+		if not rich_text.is_empty():
+			properties["text"] = rich_text
+	if node is Window:
+		var window_title := String((node as Window).title)
+		if not window_title.is_empty():
+			properties["title"] = window_title
+	if not properties.is_empty():
+		output.append({
+			"path": String(scene_root.get_path_to(node)),
+			"properties": properties,
+		})
+	for child in node.get_children():
+		_append_presentation_node(child, scene_root, output)
 
 
 func _vector2_array(value: Vector2) -> Array:
@@ -558,32 +683,6 @@ func _count_snapshot_nodes(snapshot: Dictionary) -> int:
 	for child in snapshot["children"]:
 		count += _count_snapshot_nodes(child)
 	return count
-
-
-func _canonical_json(value: Variant) -> String:
-	match typeof(value):
-		TYPE_DICTIONARY:
-			var keys: Array = value.keys()
-			keys.sort()
-			var members: Array[String] = []
-			for key in keys:
-				members.append(JSON.stringify(String(key)) + ":" + _canonical_json(value[key]))
-			return "{" + ",".join(members) + "}"
-		TYPE_ARRAY:
-			var values: Array[String] = []
-			for item in value:
-				values.append(_canonical_json(item))
-			return "[" + ",".join(values) + "]"
-		TYPE_STRING:
-			return JSON.stringify(value)
-		TYPE_BOOL:
-			return "true" if value else "false"
-		TYPE_INT, TYPE_FLOAT:
-			return JSON.stringify(value)
-		TYPE_NIL:
-			return "null"
-		_:
-			return JSON.stringify(String(value))
 
 
 func _emit_error(code: String, params: Dictionary, exit_code: int) -> void:

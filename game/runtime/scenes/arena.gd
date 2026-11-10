@@ -65,7 +65,7 @@ func _create_localized_ui() -> void:
 	_controls_hint_label = _add_ui_label(ui_root, "ControlsHintLabel", Vector2(24, 517), Vector2(912, 20), 14)
 	_add_ui_button(ui_root, "StartButton", START_BUTTON_KEY, Vector2(620, 22), Vector2(100, 36))
 	_add_ui_button(ui_root, "PauseButton", PAUSE_BUTTON_KEY, Vector2(724, 22), Vector2(100, 36))
-	_add_ui_button(ui_root, "RestartButton", RESTART_BUTTON_KEY, Vector2(828, 22), Vector2(104, 36))
+	_add_ui_button(ui_root, "RestartButton", RESTART_BUTTON_KEY, Vector2(824, 22), Vector2(136, 36))
 	_refresh_localized_text()
 
 
