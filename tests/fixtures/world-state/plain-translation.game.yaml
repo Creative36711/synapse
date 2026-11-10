@@ -1,0 +1,13 @@
+specVersion: "1.0"
+game:
+  id: "example.worldstatetranslation"
+  version: "0.1.0"
+  titleKey: "game.example_minimal.title"
+entry:
+  scene: "scene.world-state-translation"
+modules:
+  - id: "synapse.test.worldstate"
+    version: "1.0.0"
+locales:
+  default: "en"
+  supported: ["en", "de"]

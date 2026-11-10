@@ -1,0 +1,17 @@
+specVersion: "1.0"
+module:
+  id: "synapse.test.worldstate"
+  version: "1.0.0"
+  titleKey: "game.example_minimal.title"
+requires:
+  spec: "1.0"
+  engine: ">=4.7.0 <5.0.0"
+provides:
+  scenes:
+    - "scene.world-state-locale-geometry"
+    - "scene.world-state-translation"
+  sceneEntries:
+    - id: "scene.world-state-locale-geometry"
+      resource: "res://runtime/scenes/world_state_locale_geometry.tscn"
+    - id: "scene.world-state-translation"
+      resource: "res://runtime/scenes/world_state_translation.tscn"

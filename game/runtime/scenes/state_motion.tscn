@@ -1,8 +1,13 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://runtime/scenes/state_motion.gd" id="1"]
+[ext_resource type="Script" path="res://runtime/scenes/localized_caption.gd" id="2"]
 
 [node name="StateMotion" type="Node2D"]
+
+[node name="LocalizedCaption" type="Node" parent="."]
+script = ExtResource("2")
+caption_position = Vector2(32, 32)
 
 [node name="Background" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(0, 0, 960, 0, 960, 540, 0, 540)
