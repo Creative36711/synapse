@@ -43,6 +43,21 @@ function runCli(args, envOverrides = {}) {
   });
 }
 
+function assertGodotProcessStarted(result) {
+  if (result.error?.code !== 'ENOENT') return;
+  const record = {
+    catalogKey: 'errors.runtime.engine.missing',
+    code: 'runtime.engine.missing',
+    params: {
+      actual: 'not_found',
+      engine: 'Godot',
+      expected: 'Godot executable on PATH',
+      path: '/run',
+    },
+  };
+  process.stderr.write(`${JSON.stringify(record)}\n`);
+  assert.fail(`runtime.engine.missing: ${JSON.stringify(record.params)}`);
+}
 
 function machineRecord(stdout) {
   const line = stdout.split(/\r?\n/).find((item) => item.trim().startsWith('{'));
@@ -98,6 +113,7 @@ test('run validates the GameSpec, processes 120 frames and produces deterministi
   mkdirSync(TEST_DIR, { recursive: true });
   const args = ['run', 'examples/minimal.game.yaml', '--frames', '120', '--shot', SHOT_PATH];
   const first = runCli(args);
+  assertGodotProcessStarted(first);
   assert.equal(first.status, 0, `${first.stdout}\n${first.stderr}`);
   assert.equal(first.stderr, '');
   const firstRecord = machineRecord(first.stdout);
@@ -112,6 +128,7 @@ test('run validates the GameSpec, processes 120 frames and produces deterministi
   assert.ok(firstPng.readUInt32BE(20) > 0);
 
   const second = runCli(args);
+  assertGodotProcessStarted(second);
   assert.equal(second.status, 0, `${second.stdout}\n${second.stderr}`);
   assert.equal(second.stderr, '');
   const secondRecord = machineRecord(second.stdout);

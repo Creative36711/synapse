@@ -25,6 +25,33 @@ jobs:
         run: |
           tools/godot/install.sh
           echo /tmp/synapse-godot/bin >> "$GITHUB_PATH"
+      - name: Preflight ImageMagick compare
+        shell: bash
+        run: |
+          set +e
+          compare_output="$(compare -version 2>&1)"
+          compare_rc=$?
+          set -e
+          if [ "$compare_rc" -ne 0 ]; then
+            node - "$compare_rc" "$compare_output" <<'NODE'
+          const [exitCode, output] = process.argv.slice(2);
+          const record = {
+            catalogKey: 'errors.runtime.engine.missing',
+            code: 'runtime.engine.missing',
+            params: {
+              actual: { exit_code: Number(exitCode), output: output || 'not_found' },
+              engine: 'ImageMagick compare',
+              expected: { command: 'compare -version', available: true },
+              path: 'compare',
+            },
+          };
+          process.stderr.write(`${JSON.stringify(record)}\n`);
+          NODE
+            exit 1
+          fi
+          printf '%s\n' "$compare_output" | sed -n '1p'
+      - name: Install pinned GDScript parser
+        run: node tools/i18n/setup-parser.mjs
       - run: npm run check:contracts
       - run: npm run test:contracts
       - run: npm run test:validation
@@ -33,6 +60,10 @@ jobs:
       - name: test:cli — core run, arena, and input
         env:
           SYNAPSE_CLI_TEST_PATTERN: 'run validates|arena GameSpec|public run --input'
+        run: npm run test:cli
+      - name: test:cli — V-2 world-state invariants
+        env:
+          SYNAPSE_CLI_TEST_PATTERN: 'arena GameSpec produces a locale-independent state fingerprint|state-motion rules are locale-invariant'
         run: npm run test:cli
       - name: test:cli — dependency and runtime failures
         env:
@@ -53,4 +84,4 @@ jobs:
       - run: npm run test:runtime
       - run: npm run test:deps
       - run: npm run i18n-check
-      - run: npm run i18n-no-literals
+      - run: npm run i18n-no-literals -- --require-parser

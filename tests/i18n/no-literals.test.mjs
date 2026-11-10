@@ -33,7 +33,9 @@ function fixture(projectRoot, relativePath, source) {
 }
 
 function runChecker(projectRoot, options = {}) {
-  return spawnSync(process.execPath, [SCRIPT, '--root', resolve(projectRoot)], { encoding: 'utf8', ...options });
+  const { requireParser = false, ...spawnOptions } = options;
+  const args = [SCRIPT, ...(requireParser ? ['--require-parser'] : []), '--root', resolve(projectRoot)];
+  return spawnSync(process.execPath, args, { encoding: 'utf8', ...spawnOptions });
 }
 
 test('a direct UI display-property assignment is reported and fails the CLI check', () => withProject((projectRoot) => {
@@ -201,28 +203,46 @@ test('localized GDScript assignments and empty serialized display properties pas
 
 test('multiline GDScript string assigned to a display property is reported', () => withProject((projectRoot) => {
   fixture(projectRoot, 'game/multiline.gd', 'extends Control\nfunc f():\n    text = """Hello"""\n');
-  const result = runChecker(projectRoot);
+  const result = runChecker(projectRoot, { requireParser: true });
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /game\/multiline\.gd:3: literal in display property text/);
 }));
 
 test('constant chr concatenation with a string literal is reported', () => withProject((projectRoot) => {
   fixture(projectRoot, 'game/concat.gd', 'extends Control\nfunc f():\n    text = String.chr(72) + "ello"\n');
-  const result = runChecker(projectRoot);
+  const result = runChecker(projectRoot, { requireParser: true });
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /game\/concat\.gd:3: literal in display property text/);
 }));
 
 test('concatenated constant String.chr calls are reported', () => withProject((projectRoot) => {
   fixture(projectRoot, 'game/chr.gd', 'extends Control\nfunc f():\n    text = String.chr(72) + String.chr(105)\n');
-  const result = runChecker(projectRoot);
+  const result = runChecker(projectRoot, { requireParser: true });
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /game\/chr\.gd:3: literal in display property text/);
 }));
 
 test('a plain GDScript display-property string literal is reported', () => withProject((projectRoot) => {
   fixture(projectRoot, 'game/plain.gd', 'extends Control\nfunc f():\n    text = "Hello"\n');
-  const result = runChecker(projectRoot);
+  const result = runChecker(projectRoot, { requireParser: true });
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /game\/plain\.gd:3: literal in display property text/);
+}));
+
+test('--require-parser fails closed with a machine record when gdtoolkit is unavailable', () => withProject((projectRoot) => {
+  fixture(projectRoot, 'game/plain.gd', 'extends Control\nfunc f():\n    text = "Hello"\n');
+  const missingVenv = join(projectRoot, 'missing-parser-venv');
+  const result = runChecker(projectRoot, {
+    requireParser: true,
+    env: { ...process.env, SYNAPSE_I18N_VENV: missingVenv },
+  });
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const lines = result.stderr.trim().split(/\r?\n/);
+  assert.equal(lines.length, 1, result.stderr);
+  const record = JSON.parse(lines[0]);
+  assert.equal(record.event, 'parser.unavailable');
+  assert.equal(record.path, missingVenv);
+  assert.equal(record.command, 'node tools/i18n/setup-parser.mjs');
+  assert.match(record.reason, /environment is missing/);
+  assert.doesNotMatch(result.stdout, /user-facing-literals=0/);
 }));
