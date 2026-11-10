@@ -1,8 +1,13 @@
 import { extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
-const REPO_ROOT = resolve(join(fileURLToPath(new URL('.', import.meta.url)), '../..'));
+import { checkParser } from './setup-parser.mjs';
+
+const TOOL_DIRECTORY = fileURLToPath(new URL('.', import.meta.url));
+const REPO_ROOT = resolve(join(TOOL_DIRECTORY, '../..'));
+const PARSER_BRIDGE = join(TOOL_DIRECTORY, 'parser_bridge.py');
 const IGNORED_DIRECTORIES = new Set(['.git', '.godot', 'node_modules']);
 const GAME_EXTENSIONS = new Set(['.gd', '.tscn', '.mjs', '.js', '.cjs']);
 const CLI_EXTENSIONS = new Set(['.mjs', '.js', '.cjs']);
@@ -271,7 +276,66 @@ function godotOutputCall(tokens, index) {
 }
 
 function addViolation(violations, file, line, mechanism, property = undefined) {
-  violations.push({ file, line, mechanism, ...(property ? { property } : {}) });
+  const violation = { file, line, mechanism, ...(property ? { property } : {}) };
+  if (!violations.some((existing) => JSON.stringify(existing) === JSON.stringify(violation))) {
+    violations.push(violation);
+  }
+}
+
+function parserError(record) {
+  const error = new Error(record.reason || record.detail || 'GDScript parser failed');
+  error.parserRecord = record;
+  return error;
+}
+
+function parseGDScriptFiles(files) {
+  const status = checkParser();
+  if (!status.available) throw parserError(status.record);
+  if (files.length === 0) return new Map();
+
+  const input = JSON.stringify({
+    files: files.map(({ file, source }) => ({ file, source })),
+  });
+  const result = spawnSync(status.paths.python, [PARSER_BRIDGE], {
+    encoding: 'utf8',
+    input,
+    maxBuffer: 32 * 1024 * 1024,
+    windowsHide: true,
+  });
+  if (result.error || !result.stdout) {
+    throw parserError({
+      event: 'parser.unavailable',
+      path: status.paths.venv,
+      command: 'node tools/i18n/setup-parser.mjs',
+      reason: result.error?.message || result.stderr || 'gdtoolkit parser produced no result',
+    });
+  }
+
+  let report;
+  try {
+    report = JSON.parse(result.stdout);
+  } catch (error) {
+    throw parserError({
+      event: 'parser.failed',
+      path: status.paths.venv,
+      detail: error.message,
+      reason: result.stderr || result.stdout.slice(0, 500),
+    });
+  }
+  if (report.version !== '4.5.0' || !Array.isArray(report.files)) {
+    throw parserError({ event: 'parser.failed', path: status.paths.venv, reason: 'unexpected parser bridge response' });
+  }
+  const failed = report.files.find((item) => item.error);
+  if (failed || result.status !== 0) {
+    throw parserError({
+      event: 'parser.parse_failed',
+      file: failed?.file,
+      line: failed?.line,
+      column: failed?.column,
+      reason: failed?.error || result.stderr || 'GDScript parse failed',
+    });
+  }
+  return new Map(report.files.map((item) => [item.file, item]));
 }
 
 function inspectScene(source, file, violations) {
@@ -318,15 +382,35 @@ export function findUserFacingLiterals(projectRoot = REPO_ROOT) {
     ...sourceFiles(gameDirectory, GAME_EXTENSIONS),
     ...sourceFiles(join(normalizedRoot, 'cli'), CLI_EXTENSIONS),
   ].sort();
+  const sourceRecords = files.map((file) => ({
+    file: relative(normalizedRoot, file).split('\\').join('/'),
+    extension: extname(file).toLowerCase(),
+    source: readFileSync(file, 'utf8'),
+  }));
+  const parserReports = parseGDScriptFiles(sourceRecords
+    .filter((record) => record.extension === '.gd')
+    .map(({ file, source }) => ({ file, source })));
   const violations = [];
-  for (const file of files) {
-    const relativeFile = relative(normalizedRoot, file).split('\\').join('/');
-    const extension = extname(file).toLowerCase();
-    const source = readFileSync(file, 'utf8');
-    if (extension === '.tscn') inspectScene(source, relativeFile, violations);
-    else inspectCode(source, relativeFile, extension, violations);
+  for (const record of sourceRecords) {
+    const { file, extension, source } = record;
+    if (extension === '.tscn') {
+      inspectScene(source, file, violations);
+      continue;
+    }
+    if (extension === '.gd') {
+      const parsed = parserReports.get(file);
+      for (const assignment of parsed.assignments) {
+        if (['=', '+=', ':='].includes(assignment.operator) && assignment.hasStaticVisibleText) {
+          addViolation(violations, file, assignment.line, 'display-property', assignment.property);
+        }
+      }
+      for (const call of parsed.calls) {
+        addViolation(violations, file, call.line, call.mechanism);
+      }
+    }
+    inspectCode(source, file, extension, violations);
   }
-  return { filesScanned: files.length, scannedFiles: files.map((file) => relative(normalizedRoot, file).split('\\').join('/')), scanPatterns: SCAN_PATTERNS, violations };
+  return { filesScanned: files.length, scannedFiles: sourceRecords.map(({ file }) => file), scanPatterns: SCAN_PATTERNS, violations };
 }
 
 function parseArguments(args) {
@@ -359,7 +443,11 @@ function main() {
       process.stdout.write(`i18n-no-literals: scanned=${filesScanned} user-facing-literals=0\n`);
     }
   } catch (error) {
-    process.stderr.write(`i18n-no-literals: ERROR ${error.message}\n`);
+    if (error.parserRecord) {
+      process.stderr.write(`${JSON.stringify(error.parserRecord)}\n`);
+    } else {
+      process.stderr.write(`i18n-no-literals: ERROR ${error.message}\n`);
+    }
     process.exitCode = 1;
   }
 }

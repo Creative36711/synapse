@@ -3,12 +3,18 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import test from 'node:test';
+import test, { before } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { findUserFacingLiterals } from '../../tools/i18n/no-literals.mjs';
 
 const SCRIPT = fileURLToPath(new URL('../../tools/i18n/no-literals.mjs', import.meta.url));
+const SETUP_SCRIPT = fileURLToPath(new URL('../../tools/i18n/setup-parser.mjs', import.meta.url));
+
+before(() => {
+  const result = spawnSync(process.execPath, [SETUP_SCRIPT], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
 
 function withProject(run) {
   const projectRoot = mkdtempSync(join(tmpdir(), 'synapse-i18n-literal-'));
@@ -26,8 +32,8 @@ function fixture(projectRoot, relativePath, source) {
   writeFileSync(path, source);
 }
 
-function runChecker(projectRoot) {
-  return spawnSync(process.execPath, [SCRIPT, '--root', resolve(projectRoot)], { encoding: 'utf8' });
+function runChecker(projectRoot, options = {}) {
+  return spawnSync(process.execPath, [SCRIPT, '--root', resolve(projectRoot)], { encoding: 'utf8', ...options });
 }
 
 test('a direct UI display-property assignment is reported and fails the CLI check', () => withProject((projectRoot) => {
@@ -191,4 +197,32 @@ test('localized GDScript assignments and empty serialized display properties pas
   const result = runChecker(projectRoot);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /user-facing-literals=0/);
+}));
+
+test('multiline GDScript string assigned to a display property is reported', () => withProject((projectRoot) => {
+  fixture(projectRoot, 'game/multiline.gd', 'extends Control\nfunc f():\n    text = """Hello"""\n');
+  const result = runChecker(projectRoot);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout, /game\/multiline\.gd:3: literal in display property text/);
+}));
+
+test('constant chr concatenation with a string literal is reported', () => withProject((projectRoot) => {
+  fixture(projectRoot, 'game/concat.gd', 'extends Control\nfunc f():\n    text = String.chr(72) + "ello"\n');
+  const result = runChecker(projectRoot);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout, /game\/concat\.gd:3: literal in display property text/);
+}));
+
+test('concatenated constant String.chr calls are reported', () => withProject((projectRoot) => {
+  fixture(projectRoot, 'game/chr.gd', 'extends Control\nfunc f():\n    text = String.chr(72) + String.chr(105)\n');
+  const result = runChecker(projectRoot);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout, /game\/chr\.gd:3: literal in display property text/);
+}));
+
+test('a plain GDScript display-property string literal is reported', () => withProject((projectRoot) => {
+  fixture(projectRoot, 'game/plain.gd', 'extends Control\nfunc f():\n    text = "Hello"\n');
+  const result = runChecker(projectRoot);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout, /game\/plain\.gd:3: literal in display property text/);
 }));
