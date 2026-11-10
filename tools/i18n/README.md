@@ -27,6 +27,11 @@ catalog. The checker still reports every missing key, even when a non-English ca
   Godot `print`/`printerr`/`push_error`/`push_warning`, JavaScript `console.log`/`info`/`warn`/
   `error`/`debug`, and `process.stdout.write`/`process.stderr.write`. Translation calls and catalog
   lookups are allowed; diagnostic-code-shaped tokens are treated as machine identifiers, not prose.
+  A pinned `gdtoolkit==4.5.0` GDScript parser is mandatory and lives in the isolated, ignored
+  `tools/i18n/.venv/`. Run `node tools/i18n/setup-parser.mjs` to install or repair it, or add
+  `--check` to check without installing. `SYNAPSE_I18N_VENV` overrides the environment path. If the
+  parser is unavailable or a GDScript file cannot be parsed, the analyzer exits non-zero rather
+  than reporting a clean scan; the tokenizer is only a supplement to the parser-backed analysis.
   User-visible messages belong in catalogs, while diagnostic output remains code and parameters.
 - The public validator accepts `godot --headless --path game --script res://cli/main.gd -- validate <GameSpec> --locale <tag>`.
   Validation messages and CLI usage come from the root diagnostic catalogs; unsupported tags fall
@@ -37,5 +42,6 @@ catalog. The checker still reports every missing key, even when a non-English ca
   JavaScript CLI output, localized expressions, comments, and example placeholder mismatches. Each
   supported output family has negative probes that make the checker exit non-zero.
 
-These checks are local and offline. They do not invoke a translation service or alter the validator,
-its diagnostic codes, parameter maps, or existing game catalogs.
+The checks do not invoke a translation service or alter the validator, its diagnostic codes,
+parameter maps, or existing game catalogs. The literal checker itself is local; its one-time parser
+setup downloads the pinned development tool into the ignored virtual environment.
