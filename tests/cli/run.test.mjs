@@ -296,7 +296,7 @@ test('public run --input applies deterministic actions and localizes a missing i
     missingDiagnostics[locale] = diagnostic;
     assert.equal(diagnostic.code, 'actions.file.missing');
     assert.equal(diagnostic.catalogKey, 'errors.actions.file.missing');
-    assert.equal(diagnostic.params.path, '/--input');
+    assert.equal(diagnostic.params.path, missingPath);
     assert.equal(diagnostic.params.file, missingPath);
     assert.ok(diagnostic.params.expected && Object.keys(diagnostic.params.expected).length > 0);
     assert.ok(diagnostic.params.actual);
@@ -332,7 +332,7 @@ test('public run --input applies deterministic actions and localizes a missing i
       const diagnostic = machineRecord(result.stdout);
       assert.equal(diagnostic.code, 'actions.file.missing');
       assert.equal(diagnostic.catalogKey, 'errors.actions.file.missing');
-      assert.equal(diagnostic.params.path, '/--input');
+      assert.equal(diagnostic.params.path, unreadablePath);
       assert.equal(diagnostic.params.file, unreadablePath);
       assert.ok(diagnostic.params.expected && Object.keys(diagnostic.params.expected).length > 0);
       assert.ok(diagnostic.params.actual);
@@ -467,6 +467,8 @@ test('missing Godot produces localized runtime.engine.missing and invalid locale
       assert.equal(results[locale].code, 'runtime.engine.missing');
       assert.equal(results[locale].catalogKey, 'errors.runtime.engine.missing');
       assert.equal(results[locale].params.path, '/run');
+      assert.deepEqual(results[locale].params.expected, 'Godot executable on PATH');
+      assert.equal(results[locale].params.actual, 'not_found');
       assert.ok(results[locale].message.length > 0);
       assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127|render_failed/);
     }
@@ -510,7 +512,8 @@ exit 42
     const record = machineRecord(result.stdout);
     assert.equal(record.code, 'runtime.engine.missing');
     assert.equal(record.catalogKey, 'errors.runtime.engine.missing');
-    assert.equal(record.params.path, '/--shot');
+    assert.equal(record.params.path, join(isolatedPath, 'failed.png'));
+    assert.deepEqual(record.params.expected, { exit_code: 0, frames_marker: 'frames=1' });
     assert.equal(record.params.actual.exit_code, 42);
     assert.equal(record.params.actual.renderer_record.code, 'test.renderer.failure');
     assert.equal(record.params.actual.renderer_record.params.reason, 'fixture_failure');
@@ -523,7 +526,7 @@ exit 42
 });
 
 
-test('state capture failure uses runtime.engine.missing with nested capture details', { timeout: 180_000 }, () => {
+test('state capture failure propagates cli.run.state.write_failed with the supplied state path', { timeout: 180_000 }, () => {
   const isolatedPath = mkdtempSync(join(tmpdir(), 'synapse-state-capture-failure-'));
   try {
     const shotPath = join(isolatedPath, 'rendered.png');
@@ -535,15 +538,13 @@ test('state capture failure uses runtime.engine.missing with nested capture deta
     ]);
     assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
     const record = machineRecord(result.stdout);
-    assert.equal(record.code, 'runtime.engine.missing');
-    assert.equal(record.catalogKey, 'errors.runtime.engine.missing');
-    assert.equal(record.params.path, '/--state');
-    assert.equal(record.params.actual.exit_code, 1);
-    assert.equal(record.params.actual.reason, 'state_capture_process_failed');
-    assert.equal(record.params.actual.renderer_record.code, 'cli.run.state.write_failed');
-    assert.equal(record.params.actual.renderer_record.params.path, '/--state');
-    assert.ok(record.message.length > 0);
-    assert.match(record.message, /[ぁ-んァ-ン一-龯]/u);
+    assert.equal(record.code, 'cli.run.state.write_failed');
+    assert.equal(Object.hasOwn(record, 'catalogKey'), false);
+    assert.equal(record.params.path, statePath);
+    assert.deepEqual(record.params.expected, { file_writable: true });
+    assert.equal(typeof record.params.actual, 'number');
+    assert.equal(Object.hasOwn(record.params, 'renderer_record'), false);
+    assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /ENOENT|127/);
     assert.ok(existsSync(shotPath), 'render must complete before the state-capture failure');
   } finally {
     rmSync(isolatedPath, { recursive: true, force: true });
@@ -717,7 +718,7 @@ test('run --state writes canonical locale-independent fingerprints and records t
   }
 });
 
-test('run --state reports missing values, invalid paths, and write failures distinctly', () => {
+test('run --state reports missing values, invalid paths, and write failures distinctly', { timeout: 180_000 }, () => {
   rmSync(STATE_TEST_DIR, { recursive: true, force: true });
   mkdirSync(STATE_TEST_DIR, { recursive: true });
   const shot = join(STATE_TEST_DIR, 'validation.png');
@@ -735,7 +736,11 @@ test('run --state reports missing values, invalid paths, and write failures dist
   ]) {
     const invalid = runCli([...base, '--state', path]);
     assert.equal(invalid.status, 2, `${path}: ${invalid.stdout}\n${invalid.stderr}`);
-    assert.equal(machineRecord(invalid.stdout).code, 'cli.run.state.invalid');
+    const record = machineRecord(invalid.stdout);
+    assert.equal(record.code, 'cli.run.state.invalid');
+    assert.equal(record.params.path, path);
+    assert.ok(record.params.expected && Object.keys(record.params.expected).length > 0);
+    assert.ok(record.params.actual);
   }
 
   const writeTarget = join(STATE_TEST_DIR, 'not-a-file.json');
@@ -743,11 +748,43 @@ test('run --state reports missing values, invalid paths, and write failures dist
   const writeFailure = runCli([...base, '--state', writeTarget]);
   assert.equal(writeFailure.status, 1, `${writeFailure.stdout}\n${writeFailure.stderr}`);
   const writeFailureRecord = machineRecord(writeFailure.stdout);
-  assert.equal(writeFailureRecord.code, 'runtime.engine.missing');
-  assert.equal(writeFailureRecord.catalogKey, 'errors.runtime.engine.missing');
-  assert.equal(writeFailureRecord.params.path, '/--state');
-  assert.equal(writeFailureRecord.params.actual.reason, 'state_capture_process_failed');
-  assert.equal(writeFailureRecord.params.actual.renderer_record.code, 'cli.run.state.write_failed');
+  assert.equal(writeFailureRecord.code, 'cli.run.state.write_failed');
+  assert.equal(writeFailureRecord.params.path, writeTarget);
+  assert.ok(writeFailureRecord.params.expected && Object.keys(writeFailureRecord.params.expected).length > 0);
+  assert.equal(typeof writeFailureRecord.params.actual, 'number');
+  assert.equal(Object.hasOwn(writeFailureRecord.params, 'renderer_record'), false);
+  assert.doesNotMatch(`${writeFailure.stdout}\n${writeFailure.stderr}`, /ENOENT|127/);
+
+  const procStatePath = '/proc/nope/state.json';
+  const procFailure = runCli([...base, '--state', procStatePath]);
+  assert.equal(procFailure.status, 1, `${procFailure.stdout}\n${procFailure.stderr}`);
+  const procRecord = machineRecord(procFailure.stdout);
+  assert.equal(procRecord.code, 'cli.run.state.write_failed');
+  assert.equal(procRecord.params.path, procStatePath);
+  assert.ok(procRecord.params.expected && Object.keys(procRecord.params.expected).length > 0);
+  assert.ok(procRecord.params.actual !== undefined && procRecord.params.actual !== null);
+  assert.equal(Object.hasOwn(procRecord.params, 'renderer_record'), false);
+  assert.doesNotMatch(`${procFailure.stdout}\n${procFailure.stderr}`, /ENOENT|127/);
+
+  const spacedDirectory = join(STATE_TEST_DIR, 'syn b4');
+  mkdirSync(spacedDirectory, { recursive: true });
+  const spacedShot = join(spacedDirectory, 'shot --x.png');
+  const spacedState = join(spacedDirectory, 'state --x.json');
+  const spacedRun = runCli([
+    'run', 'examples/minimal.game.yaml', '--frames', '1', '--shot', spacedShot,
+    '--state', spacedState, '--lang', 'en',
+  ]);
+  assert.equal(spacedRun.status, 0, `${spacedRun.stdout}\n${spacedRun.stderr}`);
+  const spacedRecord = machineRecord(spacedRun.stdout);
+  assert.equal(spacedRecord.code, 'cli.run.complete');
+  assert.equal(spacedRecord.params.shot, spacedShot);
+  assert.equal(existsSync(spacedShot), true, 'shot must be created at the exact path containing spaces and a flag-like suffix');
+  assert.equal(existsSync(spacedState), true, 'state must be created at the exact path containing spaces and a flag-like suffix');
+  const spacedPng = readFileSync(spacedShot);
+  assert.deepEqual(spacedPng.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const spacedStateDocument = JSON.parse(readFileSync(spacedState, 'utf8'));
+  assert.equal(spacedStateDocument.format, 'synapse.world-state.v2');
+  assert.doesNotMatch(`${spacedRun.stdout}\n${spacedRun.stderr}`, /ENOENT|127/);
 });
 
 function runStateMotion(frameCount, locale, suffix) {
