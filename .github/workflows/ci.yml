@@ -25,6 +25,39 @@ jobs:
         run: |
           tools/godot/install.sh
           echo /tmp/synapse-godot/bin >> "$GITHUB_PATH"
+      - name: Provision ImageMagick compare
+        shell: bash
+        run: |
+          if command -v compare >/dev/null 2>&1; then
+            echo "compare already available: $(command -v compare)"
+          else
+            set +e
+            apt_output="$(sudo apt-get update 2>&1)"
+            apt_rc=$?
+            if [ "$apt_rc" -eq 0 ]; then
+              install_output="$(sudo apt-get install --no-install-recommends -y imagemagick 2>&1)"
+              apt_rc=$?
+              apt_output="$(printf '%s\n%s' "$apt_output" "$install_output")"
+            fi
+            set -e
+            if [ "$apt_rc" -ne 0 ]; then
+              node - "$apt_rc" "$apt_output" <<'NODE'
+          const [exitCode, output] = process.argv.slice(2);
+          const record = {
+            catalogKey: 'errors.runtime.engine.missing',
+            code: 'runtime.engine.missing',
+            params: {
+              actual: { available: false, exit_code: Number(exitCode), output: output || 'install_failed' },
+              engine: 'ImageMagick compare',
+              expected: { command: 'compare -version', available: true },
+              path: 'compare',
+            },
+          };
+          process.stderr.write(`${JSON.stringify(record)}\n`);
+          NODE
+              exit 1
+            fi
+          fi
       - name: Preflight ImageMagick compare
         shell: bash
         run: |
