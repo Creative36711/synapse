@@ -1,0 +1,904 @@
+{
+  "actions": [
+    {
+      "frame": 1,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 2,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 3,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 4,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 5,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 6,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 7,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 8,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 9,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 10,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 11,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 12,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 13,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 14,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 15,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 16,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 17,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 18,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 19,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 20,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 21,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 22,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 23,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 24,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 25,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 26,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 27,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 28,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 29,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 30,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 31,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 32,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 33,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 34,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 35,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 36,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 37,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 38,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 39,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 40,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 41,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 42,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 43,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 44,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 45,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 46,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 47,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 48,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 49,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 50,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 51,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 52,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 53,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 54,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 55,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 56,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 57,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 58,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 59,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 60,
+      "action": "move_right",
+      "event": {
+        "type": "key",
+        "key": "move_right",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 61,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 62,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 63,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 64,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 65,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 66,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 67,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 68,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 69,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 70,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 71,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 72,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 73,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 74,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 75,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 76,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 77,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 78,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 79,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 80,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 81,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 82,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 83,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 84,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 85,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 86,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 87,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 88,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 89,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 90,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 91,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 92,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 93,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 94,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 95,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 96,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 97,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 98,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 99,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    },
+    {
+      "frame": 100,
+      "action": "move_down",
+      "event": {
+        "type": "key",
+        "key": "move_down",
+        "pressed": true
+      }
+    }
+  ]
+}

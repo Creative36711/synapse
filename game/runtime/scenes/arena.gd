@@ -1,5 +1,6 @@
 extends Node2D
 
+const ArenaInput = preload("res://input/arena_input.gd")
 const VIEW_SIZE := Vector2(960.0, 540.0)
 const DEFAULT_PLAYER_POSITION := Vector2(120.0, 270.0)
 const PLAYER_BOUNDS := Rect2(Vector2(24.0, 92.0), Vector2(912.0, 424.0))
@@ -30,8 +31,12 @@ var _collectibles: Array[Node] = []
 var _input_actions: Array = []
 var _actions_by_frame: Dictionary = {}
 var _explicit_input := false
-var _frame_index := 0
+var _input_tick := 0
+var _simulation_frame := 0
+var _reset_this_tick := false
+var _paused := false
 var _input_action_count := 0
+var _pause_indicator: Node2D
 var _score_label: Label
 var _win_condition_label: Label
 var _controls_hint_label: Label
@@ -40,6 +45,7 @@ var _controls_hint_label: Label
 func configure_input(actions: Array) -> void:
 	_input_actions = actions.duplicate(true)
 	_explicit_input = true
+	_queue_input_actions()
 
 
 func _ready() -> void:
@@ -63,9 +69,13 @@ func _create_localized_ui() -> void:
 	_score_label = _add_ui_label(ui_root, "ScoreLabel", Vector2(304, 22), Vector2(300, 28), 18)
 	_win_condition_label = _add_ui_label(ui_root, "WinConditionLabel", Vector2(304, 52), Vector2(300, 24), 15)
 	_controls_hint_label = _add_ui_label(ui_root, "ControlsHintLabel", Vector2(24, 517), Vector2(912, 20), 14)
-	_add_ui_button(ui_root, "StartButton", START_BUTTON_KEY, Vector2(620, 22), Vector2(100, 36))
-	_add_ui_button(ui_root, "PauseButton", PAUSE_BUTTON_KEY, Vector2(724, 22), Vector2(100, 36))
-	_add_ui_button(ui_root, "RestartButton", RESTART_BUTTON_KEY, Vector2(824, 22), Vector2(136, 36))
+	var start_button := _add_ui_button(ui_root, "StartButton", START_BUTTON_KEY, Vector2(620, 22), Vector2(100, 36))
+	var pause_button := _add_ui_button(ui_root, "PauseButton", PAUSE_BUTTON_KEY, Vector2(724, 22), Vector2(100, 36))
+	var restart_button := _add_ui_button(ui_root, "RestartButton", RESTART_BUTTON_KEY, Vector2(824, 22), Vector2(136, 36))
+	start_button.pressed.connect(_on_start_pressed)
+	pause_button.pressed.connect(_on_pause_pressed)
+	restart_button.pressed.connect(_on_restart_pressed)
+	_add_pause_indicator(ui_root)
 	_refresh_localized_text()
 
 
@@ -81,7 +91,7 @@ func _add_ui_label(parent: Control, node_name: String, position: Vector2, size: 
 	return label
 
 
-func _add_ui_button(parent: Control, node_name: String, translation_key: String, position: Vector2, size: Vector2) -> void:
+func _add_ui_button(parent: Control, node_name: String, translation_key: String, position: Vector2, size: Vector2) -> Button:
 	var button := Button.new()
 	button.name = node_name
 	button.position = position
@@ -96,6 +106,23 @@ func _add_ui_button(parent: Control, node_name: String, translation_key: String,
 	button.add_theme_stylebox_override("focus", _button_style(Color(0.10, 0.19, 0.25, 1.0)))
 	button.text = _translate_text(translation_key)
 	parent.add_child(button)
+	return button
+
+
+func _add_pause_indicator(parent: Control) -> void:
+	_pause_indicator = Node2D.new()
+	_pause_indicator.name = "PauseIndicator"
+	_pause_indicator.position = Vector2(450, 230)
+	_pause_indicator.visible = false
+	_pause_indicator.z_index = 10
+	for bar_x in [0, 24]:
+		var bar := ColorRect.new()
+		bar.position = Vector2(bar_x, 0)
+		bar.size = Vector2(14, 64)
+		bar.color = Color(0.98, 0.76, 0.30, 1.0)
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_pause_indicator.add_child(bar)
+	parent.add_child(_pause_indicator)
 
 
 func _button_style(background: Color) -> StyleBoxFlat:
@@ -140,6 +167,7 @@ func _bind_entities() -> void:
 				properties["y"] = float(properties.get("y", DEFAULT_PLAYER_POSITION.y))
 				properties["score"] = 0
 				properties["won"] = false
+				properties["simulation_frame"] = _simulation_frame
 				child.set("properties", properties)
 			"collectible":
 				properties["collected"] = false
@@ -147,13 +175,18 @@ func _bind_entities() -> void:
 				_collectibles.append(child)
 	if not _explicit_input:
 		_input_actions = _default_demo_actions()
+	_queue_input_actions()
+	_input_action_count = _input_actions.size()
+	queue_redraw()
+
+
+func _queue_input_actions() -> void:
+	_actions_by_frame.clear()
 	for action in _input_actions:
 		var frame := int(action.get("frame", -1))
 		if not _actions_by_frame.has(frame):
 			_actions_by_frame[frame] = []
-		_actions_by_frame[frame].append(String(action.get("action", "")))
-	_input_action_count = _input_actions.size()
-	queue_redraw()
+		_actions_by_frame[frame].append(action.duplicate(true))
 
 
 func _default_demo_actions() -> Array:
@@ -166,15 +199,78 @@ func _default_demo_actions() -> Array:
 
 
 func _process(_delta: float) -> void:
-	for action in _actions_by_frame.get(_frame_index, []):
-		_apply_action(String(action))
-	_frame_index += 1
+	_reset_this_tick = false
+	for action in _actions_by_frame.get(_input_tick, []):
+		_dispatch_input_action(action)
+	_input_tick += 1
+	if not _paused and not _reset_this_tick:
+		_simulation_frame += 1
+		_update_player_simulation_frame()
 	_refresh_localized_text()
 	queue_redraw()
 
 
-func _apply_action(action: String) -> void:
+func _dispatch_input_action(action: Dictionary) -> void:
+	var event: InputEvent
+	var descriptor: Variant = action.get("event", {})
+	if descriptor is Dictionary and not descriptor.is_empty():
+		event = ArenaInput.event_from_descriptor(descriptor)
+	else:
+		event = ArenaInput.event_for_action(String(action.get("action", "")))
+	if event != null:
+		Input.parse_input_event(event)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	var action := ArenaInput.action_from_event(event)
+	if action.is_empty() or _paused:
+		return
+	_apply_action(action)
+	get_viewport().set_input_as_handled()
+
+
+func _on_start_pressed() -> void:
+	_paused = false
+	if _pause_indicator != null:
+		_pause_indicator.visible = false
+
+
+func _on_pause_pressed() -> void:
+	_paused = true
+	if _pause_indicator != null:
+		_pause_indicator.visible = true
+
+
+func _on_restart_pressed() -> void:
+	_paused = false
+	_simulation_frame = 0
+	_reset_this_tick = true
+	if _pause_indicator != null:
+		_pause_indicator.visible = false
+	for collectible in _collectibles:
+		var item_properties: Dictionary = collectible.get("properties")
+		item_properties["collected"] = false
+		collectible.set("properties", item_properties)
+	if _player != null:
+		var properties: Dictionary = _player.get("properties")
+		properties["x"] = DEFAULT_PLAYER_POSITION.x
+		properties["y"] = DEFAULT_PLAYER_POSITION.y
+		properties["score"] = 0
+		properties["won"] = false
+		properties["simulation_frame"] = 0
+		_player.set("properties", properties)
+
+
+func _update_player_simulation_frame() -> void:
 	if _player == null:
+		return
+	var properties: Dictionary = _player.get("properties")
+	properties["simulation_frame"] = _simulation_frame
+	_player.set("properties", properties)
+
+
+func _apply_action(action: String) -> void:
+	if _player == null or _paused:
 		return
 	var direction := Vector2.ZERO
 	match action:
@@ -206,10 +302,12 @@ func _apply_action(action: String) -> void:
 
 func runtime_summary() -> Dictionary:
 	if _player == null:
-		return {"frame": _frame_index, "score": 0, "player_position": []}
+		return {"frame": _simulation_frame, "simulation_frame": _simulation_frame, "paused": _paused, "score": 0, "player_position": []}
 	var properties: Dictionary = _player.get("properties")
 	return {
-		"frame": _frame_index,
+		"frame": _simulation_frame,
+		"simulation_frame": _simulation_frame,
+		"paused": _paused,
 		"score": int(properties.get("score", 0)),
 		"player_position": [properties.get("x", 0), properties.get("y", 0)],
 		"won": bool(properties.get("won", false)),
