@@ -127,6 +127,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 	var frame_count := -1
 	var shot_path := ""
 	var state_path := ""
+	var state_argument_path := ""
 	var state_requested := false
 	var input_path := ""
 	var input_requested := false
@@ -149,6 +150,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 			"--state":
 				state_requested = true
 				state_path = value
+				state_argument_path = value
 			"--input":
 				input_requested = true
 				input_path = value
@@ -161,20 +163,20 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 		_emit_error("cli.run.frames.invalid", {"path": "/--frames", "expected": {"type": "integer", "minimum": 1, "maximum": MAX_RUN_FRAMES}, "actual": frame_count}, 2)
 		return
 	if shot_path.is_empty() or not shot_path.is_absolute_path():
-		_emit_error("cli.run.shot.invalid", {"path": "/--shot", "expected": {"absolute": true, "extension": ".png", "outside_repository": true}, "actual": shot_path}, 2)
+		_emit_error("cli.run.shot.invalid", {"path": shot_path, "expected": {"absolute": true, "extension": ".png", "outside_repository": true}, "actual": shot_path}, 2)
 		return
 	shot_path = shot_path.simplify_path()
 	if shot_path.get_extension().to_lower() != "png":
-		_emit_error("cli.run.shot.invalid", {"path": "/--shot", "expected": {"extension": ".png"}, "actual": shot_path}, 2)
+		_emit_error("cli.run.shot.invalid", {"path": shot_path, "expected": {"extension": ".png"}, "actual": shot_path}, 2)
 		return
 	var repo_root := ProjectSettings.globalize_path("res://..").simplify_path()
 	if shot_path == repo_root or shot_path.begins_with(repo_root + "/"):
-		_emit_error("cli.run.shot.invalid", {"path": "/--shot", "expected": {"outside_repository": true}, "actual": shot_path}, 2)
+		_emit_error("cli.run.shot.invalid", {"path": shot_path, "expected": {"outside_repository": true}, "actual": shot_path}, 2)
 		return
 	if state_requested:
 		var state_path_error := _state_path_error(state_path, repo_root)
 		if not state_path_error.is_empty():
-			_emit_error("cli.run.state.invalid", {"path": "/--state", "expected": {"absolute": true, "extension": ".json", "outside_repository": true}, "actual": state_path_error}, 2)
+			_emit_error("cli.run.state.invalid", {"path": state_argument_path, "expected": {"absolute": true, "extension": ".json", "outside_repository": true}, "actual": state_path_error}, 2)
 			return
 		state_path = state_path.simplify_path()
 	if input_requested:
@@ -184,7 +186,7 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 		input_actions = input_result.get("actions", [])
 	var directory_error := DirAccess.make_dir_recursive_absolute(shot_path.get_base_dir())
 	if directory_error != OK:
-		_emit_error("cli.run.shot.directory_failed", {"path": "/--shot", "expected": {"directory_writable": true}, "actual": directory_error}, 1)
+		_emit_error("cli.run.shot.directory_failed", {"path": shot_path, "expected": {"directory_writable": true}, "actual": directory_error}, 1)
 		return
 
 	var validator_command := [
@@ -249,14 +251,14 @@ func _run_game(args: PackedStringArray, locale: String, node_executable: String)
 		}
 		if not renderer_record.is_empty():
 			actual["renderer_record"] = {"code": renderer_record.get("code", ""), "params": renderer_record.get("params", {})}
-		_emit_catalog_error("runtime.engine.missing", {"path": "/--shot", "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": actual, "engine": "Godot renderer"}, 1, locale)
+		_emit_catalog_error("runtime.engine.missing", {"path": shot_path, "expected": {"exit_code": 0, "frames_marker": "frames=%d" % frame_count}, "actual": actual, "engine": "Godot renderer"}, 1, locale)
 		return
 
 	var png_info := _read_png_info(shot_path)
 	if png_info.is_empty():
-		_emit_error("cli.run.png.invalid", {"path": "/--shot", "expected": {"format": "PNG", "width_minimum": 1, "height_minimum": 1}, "actual": shot_path}, 1)
+		_emit_error("cli.run.png.invalid", {"path": shot_path, "expected": {"format": "PNG", "width_minimum": 1, "height_minimum": 1}, "actual": shot_path}, 1)
 		return
-	if state_requested and not _write_world_state(scene_id, scene_path, frame_count, state_path, entity_definitions, input_actions, input_requested, godot_executable, locale):
+	if state_requested and not _write_world_state(scene_id, scene_path, frame_count, state_path, state_argument_path, entity_definitions, input_actions, input_requested, godot_executable, locale):
 		return
 	var result := {}
 	result["code"] = "cli.run.complete"
@@ -289,15 +291,15 @@ func _add_entity_instances(scene_root: Node, entity_definitions: Array) -> void:
 
 func _read_input_actions(path: String, locale: String) -> Dictionary:
 	if not path.is_absolute_path() or path.get_extension().to_lower() != "json":
-		_emit_catalog_error("field.pattern", {"path": "/--input", "expected": {"absolute": true, "extension": ".json"}, "actual": path}, 2, locale)
+		_emit_catalog_error("field.pattern", {"path": path, "expected": {"absolute": true, "extension": ".json"}, "actual": path}, 2, locale)
 		return {"ok": false}
 	var normalized_path := path.simplify_path()
 	if not FileAccess.file_exists(normalized_path):
-		_emit_catalog_error("actions.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
+		_emit_catalog_error("actions.file.missing", {"path": path, "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
 		return {"ok": false}
 	var input_file := FileAccess.open(normalized_path, FileAccess.READ)
 	if input_file == null:
-		_emit_catalog_error("actions.file.missing", {"path": "/--input", "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
+		_emit_catalog_error("actions.file.missing", {"path": path, "expected": {"absolute": true, "extension": ".json", "readable": true}, "actual": normalized_path, "file": normalized_path}, 1, locale)
 		return {"ok": false}
 	var parsed_input = JSON.parse_string(input_file.get_as_text())
 	input_file.close()
@@ -407,7 +409,7 @@ func _state_path_error(path: String, repo_root: String) -> String:
 	return ""
 
 
-func _write_world_state(scene_id: String, scene_path: String, frame_count: int, state_path: String, entity_definitions: Array, input_actions: Array, input_requested: bool, godot_executable: String, locale: String) -> bool:
+func _write_world_state(scene_id: String, scene_path: String, frame_count: int, state_path: String, state_argument_path: String, entity_definitions: Array, input_actions: Array, input_requested: bool, godot_executable: String, locale: String) -> bool:
 	var capture_command := [
 		"--headless",
 		"--path",
@@ -430,25 +432,69 @@ func _write_world_state(scene_id: String, scene_path: String, frame_count: int, 
 	var capture_exit := _execute_offscreen(godot_executable, capture_command, capture_output, true)
 	var capture_record := _parse_json_output(capture_output)
 	if capture_exit != 0:
-		var capture_actual := {
-			"exit_code": capture_exit,
-			"reason": "state_capture_process_failed",
-		}
-		if not capture_record.is_empty():
-			capture_actual["renderer_record"] = {"code": capture_record.get("code", ""), "params": capture_record.get("params", {})}
-		_emit_catalog_error("runtime.engine.missing", {"path": "/--state", "expected": {"exit_code": 0, "state_capture": true}, "actual": capture_actual, "engine": "Godot state capture"}, 1, locale)
+		_emit_state_capture_failure(
+			state_argument_path,
+			capture_record,
+			"cli.run.state.capture_failed",
+			{"exit_code": 0, "state_capture": true},
+			{"exit_code": capture_exit, "reason": "state_capture_process_failed"},
+			locale,
+			capture_exit,
+		)
 		return false
 	var state_bytes := FileAccess.get_file_as_bytes(state_path)
 	if capture_record.get("code") != "cli.run.state.complete" or state_bytes.is_empty():
-		var capture_actual := {
+		var actual := {
 			"exit_code": capture_exit,
 			"reason": "state_capture_output_or_file_missing",
-			"renderer_record": {"code": capture_record.get("code", "missing"), "params": capture_record.get("params", {})},
+			"capture_record_code": capture_record.get("code", "missing"),
 			"state_file_bytes": state_bytes.size(),
 		}
-		_emit_catalog_error("runtime.engine.missing", {"path": "/--state", "expected": {"state_capture": "cli.run.state.complete", "file_written": true}, "actual": capture_actual, "engine": "Godot state capture"}, 1, locale)
+		_emit_state_capture_failure(
+			state_argument_path,
+			capture_record,
+			"cli.run.state.write_failed" if state_bytes.is_empty() else "cli.run.state.capture_failed",
+			{"file_written": true, "state_capture": "cli.run.state.complete"},
+			actual,
+			locale,
+			1,
+		)
 		return false
 	return true
+
+
+func _emit_state_capture_failure(state_path: String, capture_record: Dictionary, fallback_code: String, fallback_expected: Dictionary, fallback_actual: Dictionary, locale: String, fallback_exit_code: int) -> void:
+	var capture_code := String(capture_record.get("code", ""))
+	var capture_error_codes := [
+		"cli.run.state.invalid",
+		"cli.run.state.capture_failed",
+		"cli.run.state.write_failed",
+		"field.enum",
+		"field.type",
+		"locale.key.missing",
+		"cli.dependency.node-missing",
+	]
+	if capture_code in capture_error_codes:
+		var propagated_record := capture_record.duplicate(true)
+		var capture_params: Variant = propagated_record.get("params", {})
+		var params: Dictionary = capture_params.duplicate(true) if typeof(capture_params) == TYPE_DICTIONARY else {}
+		params["path"] = state_path
+		if not params.has("expected"):
+			params["expected"] = fallback_expected
+		if not params.has("actual"):
+			params["actual"] = fallback_actual
+		propagated_record["params"] = params
+		if propagated_record.has("catalogKey"):
+			var message := _localized_catalog_message(locale, String(propagated_record["catalogKey"]), params)
+			if not message.is_empty():
+				propagated_record["message"] = message
+		_emit_record(propagated_record, maxi(fallback_exit_code, 1))
+		return
+	_emit_error(fallback_code, {
+		"path": state_path,
+		"expected": fallback_expected,
+		"actual": fallback_actual,
+	}, maxi(fallback_exit_code, 1))
 
 
 func _capture_world_state(args: PackedStringArray, locale: String) -> void:
