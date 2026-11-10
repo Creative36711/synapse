@@ -288,9 +288,14 @@ function parserError(record) {
   return error;
 }
 
-function parseGDScriptFiles(files) {
+function requireParserAvailable() {
   const status = checkParser();
   if (!status.available) throw parserError(status.record);
+  return status;
+}
+
+function parseGDScriptFiles(files) {
+  const status = requireParserAvailable();
   if (files.length === 0) return new Map();
 
   const input = JSON.stringify({
@@ -415,20 +420,27 @@ export function findUserFacingLiterals(projectRoot = REPO_ROOT) {
 
 function parseArguments(args) {
   let projectRoot = REPO_ROOT;
+  let requireParser = false;
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--root' && args[index + 1]) {
       projectRoot = resolve(args[index + 1]);
       index += 1;
+    } else if (args[index] === '--require-parser') {
+      requireParser = true;
     } else {
       throw new Error(`Unknown or incomplete argument: ${args[index]}`);
     }
   }
-  return projectRoot;
+  return { projectRoot, requireParser };
 }
 
 function main() {
   try {
-    const projectRoot = parseArguments(process.argv.slice(2));
+    const { projectRoot, requireParser } = parseArguments(process.argv.slice(2));
+    if (requireParser) {
+      const parser = requireParserAvailable();
+      process.stdout.write(`i18n-no-literals: parser=gdtoolkit@${parser.version} required\n`);
+    }
     const { filesScanned, scannedFiles, scanPatterns, violations } = findUserFacingLiterals(projectRoot);
     process.stdout.write(`i18n-no-literals: paths=${scanPatterns.join(',')}\n`);
     process.stdout.write(`i18n-no-literals: files=${scannedFiles.join(',') || '[none]'}\n`);
